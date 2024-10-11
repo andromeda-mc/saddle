@@ -20,7 +20,9 @@
     },
     "dependencies": {
         "@popperjs/core": "^2.11.8",
+        "barely-sha256": "^0.0.1",
         "bootstrap": "^5.3.3",
-        "sirv-cli": "^2.0.2"
+        "sirv-cli": "^2.0.2",
+        "svelte-bootstrap-icons": "^3.1.1"
     }
 }
