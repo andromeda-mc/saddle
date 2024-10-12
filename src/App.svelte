@@ -28,6 +28,8 @@
 
     let serverlist = {};
     let statelist = {};
+    let software_info = {};
+    let build_info = {};
 
     websocket.onerror = () => {
         page_state = "error";
@@ -56,6 +58,15 @@
                     return;
                 }
                 statelist[jdata.server] = jdata.state;
+
+            case "softwareinfo":
+                software_info[jdata.software] = jdata.mc_versions;
+
+            case "buildinfo":
+                if (!(jdata.software in build_info)) {
+                    build_info[jdata.software] = {};
+                }
+                build_info[jdata.software][jdata.mc_version] = jdata.builds;
 
             case "exception":
                 switch (jdata.msg) {
@@ -98,12 +109,51 @@
             JSON.stringify({ data: "stopserver", server_name: server_name }),
         );
     }
+
+    function createSoftwareChanged() {
+        const software_val = document.getElementById("createSoftware").value;
+        const build_html = document.getElementById("createBuild");
+        const is_vanilla = software_val == "Vanilla";
+        build_html.required = !is_vanilla;
+        build_html.disabled = is_vanilla;
+        if (!(software_val in software_info)) {
+            websocket.send(
+                JSON.stringify({
+                    data: "getsoftwaredata",
+                    software: software_val,
+                }),
+            );
+        }
+    }
+
+    function createMcChanged() {
+        const software_val = document.getElementById("createSoftware").value;
+        const mc_version = document.getElementById("createMc").value;
+        if (!software_val) {
+            return;
+        }
+        if (software_val in build_info) {
+            if (mc_version in build_info[software_val]) {
+                return;
+            }
+        }
+        if (software_val == "Vanilla") {
+            return;
+        }
+        websocket.send(
+            JSON.stringify({
+                data: "getbuilddata",
+                software: software_val,
+                mc_version: mc_version,
+            }),
+        );
+    }
 </script>
 
 <main>
     <nav class="navbar navbar-expand-lg bg-body-secondary">
         <div class="container-fluid">
-            <a class="navbar-brand">
+            <span class="navbar-brand">
                 <img
                     src="/favicon.png"
                     alt="andromeda saddle logo"
@@ -111,7 +161,7 @@
                     class="d-inline-block align-text-top"
                 />
                 Andromeda Saddle
-            </a>
+            </span>
             <button
                 class="navbar-toggler"
                 type="button"
@@ -126,6 +176,11 @@
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria current="page" href="#">
+                            Servers
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="#">
                             Settings
@@ -158,7 +213,7 @@
         <div class="position-absolute top-50 start-50 translate-middle">
             <input
                 id="pass_input"
-                class="form-control"
+                class="form-control px-2"
                 type="password"
                 placeholder="Enter your password here"
                 aria-label="password input"
@@ -225,10 +280,108 @@
             <div class="translate-middle">Here are no servers. Create one!</div>
         {/if}
         <div class="d-flex justify-content-center">
-            <button class="btn btn-primary mx-1">Create server</button>
+            <button
+                class="btn btn-primary mx-1"
+                data-bs-toggle="modal"
+                data-bs-target="#createServer">Create server</button
+            >
             <button class="btn btn-outline-danger mx-1">Delete server</button>
         </div>
     {/if}
+
+    <div
+        class="modal fade"
+        id="createServer"
+        tabindex="-1"
+        aria-labelledby="createModalLabel"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="createModalLabel">
+                        Create Server
+                    </h1>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                    ></button>
+                </div>
+                <form class="modal-body" id="createSoftwareForm">
+                    <div class="form-floating mb-3">
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="createName"
+                            required
+                        />
+                        <label for="createName">Server Name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <select
+                            id="createSoftware"
+                            class="form-select"
+                            required
+                            on:change={() => createSoftwareChanged()}
+                        >
+                            <option selected disabled></option>
+                            <option>Vanilla</option>
+                            <option>Paper</option>
+                            <option>Fabric</option>
+                            <option>Forge</option>
+                        </select>
+                        <label for="createSoftware">Server Software</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <select
+                            id="createMc"
+                            class="form-select"
+                            required
+                            on:change={() => createMcChanged()}
+                        >
+                            <option selected disabled></option>
+                            {#if software_info && document.getElementById("createSoftware") && document.getElementById("createSoftware").value in software_info}
+                                {#each software_info[document.getElementById("createSoftware").value] as version (version)}
+                                    <option>{version}</option>
+                                {/each}
+                            {/if}
+                        </select>
+                        <label for="createMc">Minecraft Version</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <select id="createBuild" class="form-select" required>
+                            <option selected disabled></option>
+                            {#if build_info && document.getElementById("createSoftware") && document.getElementById("createSoftware").value in build_info}
+                                {#if document.getElementById("createMc") && document.getElementById("createMc").value in build_info[document.getElementById("createSoftware").value]}
+                                    {#each build_info[document.getElementById("createSoftware").value][document.getElementById("createMc").value] as version (version)}
+                                        <option>{version}</option>
+                                    {/each}
+                                {/if}
+                            {/if}
+                        </select>
+                        <label for="createBuild">Server Software Version</label>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button
+                    >
+                    <button
+                        type="button"
+                        class="btn btn-success"
+                        on:click={() =>
+                            document
+                                .getElementById("createSoftwareForm")
+                                .submit()}>Create server</button
+                    >
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
 
 <style>
