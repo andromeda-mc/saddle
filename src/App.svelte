@@ -9,6 +9,19 @@
         return string.charAt(0).toUpperCase() + string.slice(1);
     }
 
+    function statetoclass(state) {
+        switch (state) {
+            case "stopped":
+                return "danger";
+            case "starting":
+                return "info";
+            case "running":
+                return "success";
+            case "stopping":
+                return "warning";
+        }
+    }
+
     let darkMode = localStorage.getItem("darkMode") != "false";
     function updateTheme(mode) {
         localStorage.setItem("darkMode", darkMode);
@@ -111,11 +124,15 @@
     }
 
     function createSoftwareChanged() {
-        const software_val = document.getElementById("createSoftware").value;
+        const software = document.getElementById("createSoftware");
+        const software_val = software.value;
+        const mc_version = document.getElementById("createMc");
         const build_html = document.getElementById("createBuild");
         const is_vanilla = software_val == "Vanilla";
         build_html.required = !is_vanilla;
         build_html.disabled = is_vanilla;
+        mc_version.selectedIndex = 0;
+        build_html.selectedIndex = 0;
         if (!(software_val in software_info)) {
             websocket.send(
                 JSON.stringify({
@@ -137,7 +154,7 @@
                 return;
             }
         }
-        if (software_val == "Vanilla") {
+        if (software_val == "Vanilla" || mc_version == "") {
             return;
         }
         websocket.send(
@@ -147,6 +164,18 @@
                 mc_version: mc_version,
             }),
         );
+    }
+
+    function onSubmitCreateServer(event) {
+        const form = document.getElementById("createSoftwareForm");
+        event.preventDefault();
+        if (!form.checkValidity()) {
+            event.stopPropagation();
+        } else {
+            console.log("createSoftwareForm valid!");
+        }
+
+        form.classList.add("was-validated");
     }
 </script>
 
@@ -202,12 +231,20 @@
         </div>
     </nav>
     {#if page_state == "loading"}
-        <div class="position-absolute top-50 start-50 translate-middle fs-1">
-            Please wait...
+        <div
+            class="position-absolute top-50 start-50 translate-middle fs-1 text-nowrap"
+        >
+            <div
+                class="spinner-border"
+                style="--bs-spinner-border-width: 0.25rem"
+            />
+            Connecting...
         </div>
     {:else if page_state == "error"}
-        <div class="position-absolute top-50 start-50 translate-middle fs-1">
-            Failed to connect to server!
+        <div
+            class="position-absolute top-50 start-50 translate-middle fs-1 text-center"
+        >
+            Failed to connect to the backend server!
         </div>
     {:else if page_state == "login"}
         <div class="position-absolute top-50 start-50 translate-middle">
@@ -232,6 +269,15 @@
                         {@const server_state = statelist[server]}
                         <div class="col">
                             <div class="card m-2" style="width: 15rem;">
+                                <div class="card-header">
+                                    <h6
+                                        class="card-text text-{statetoclass(
+                                            server_state,
+                                        )}"
+                                    >
+                                        {capitalize(server_state)}
+                                    </h6>
+                                </div>
                                 <div class="card-body">
                                     <h5 class="card-title">{server}</h5>
                                     <h6
@@ -246,6 +292,8 @@
                                     <p class="card-text">
                                         Java {server_settings.java_ver}
                                     </p>
+                                </div>
+                                <div class="card-footer">
                                     <button class="btn btn-primary">
                                         Edit
                                     </button>
@@ -267,7 +315,12 @@
                                         <span
                                             class="btn btn-outline-secondary disabled"
                                             disabled
-                                            >{capitalize(server_state)}...
+                                        >
+                                            <span
+                                                class="spinner-border spinner-border-sm"
+                                                aria-hidden="true"
+                                            ></span>
+                                            {capitalize(server_state)}...
                                         </span>
                                     {/if}
                                 </div>
@@ -309,76 +362,96 @@
                         aria-label="Close"
                     ></button>
                 </div>
-                <form class="modal-body" id="createSoftwareForm">
-                    <div class="form-floating mb-3">
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="createName"
-                            required
-                        />
-                        <label for="createName">Server Name</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <select
-                            id="createSoftware"
-                            class="form-select"
-                            required
-                            on:change={() => createSoftwareChanged()}
-                        >
-                            <option selected disabled></option>
-                            <option>Vanilla</option>
-                            <option>Paper</option>
-                            <option>Fabric</option>
-                            <option>Forge</option>
-                        </select>
-                        <label for="createSoftware">Server Software</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <select
-                            id="createMc"
-                            class="form-select"
-                            required
-                            on:change={() => createMcChanged()}
-                        >
-                            <option selected disabled></option>
-                            {#if software_info && document.getElementById("createSoftware") && document.getElementById("createSoftware").value in software_info}
-                                {#each software_info[document.getElementById("createSoftware").value] as version (version)}
-                                    <option>{version}</option>
-                                {/each}
-                            {/if}
-                        </select>
-                        <label for="createMc">Minecraft Version</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <select id="createBuild" class="form-select" required>
-                            <option selected disabled></option>
-                            {#if build_info && document.getElementById("createSoftware") && document.getElementById("createSoftware").value in build_info}
-                                {#if document.getElementById("createMc") && document.getElementById("createMc").value in build_info[document.getElementById("createSoftware").value]}
-                                    {#each build_info[document.getElementById("createSoftware").value][document.getElementById("createMc").value] as version (version)}
+                <form
+                    id="createSoftwareForm"
+                    class="needs-validation"
+                    on:submit={(event) => onSubmitCreateServer(event)}
+                    novalidate
+                >
+                    <div class="modal-body">
+                        <div class="form-floating mb-3">
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="createName"
+                                required
+                            />
+                            <label for="createName">Server Name</label>
+                            <div class="invalid-feedback">
+                                Please enter a server name.
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select
+                                id="createSoftware"
+                                class="form-select"
+                                required
+                                on:change={() => createSoftwareChanged()}
+                            >
+                                <option selected disabled></option>
+                                <option>Vanilla</option>
+                                <option>Paper</option>
+                                <option>Fabric</option>
+                                <option>Forge</option>
+                            </select>
+                            <label for="createSoftware">Server Software</label>
+                            <div class="invalid-feedback">
+                                Please select a server software.
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select
+                                id="createMc"
+                                class="form-select"
+                                required
+                                on:change={() => createMcChanged()}
+                            >
+                                <option selected disabled></option>
+                                {#if software_info && document.getElementById("createSoftware") && document.getElementById("createSoftware").value in software_info}
+                                    {#each software_info[document.getElementById("createSoftware").value] as version (version)}
                                         <option>{version}</option>
                                     {/each}
                                 {/if}
-                            {/if}
-                        </select>
-                        <label for="createBuild">Server Software Version</label>
+                            </select>
+                            <label for="createMc">Minecraft Version</label>
+                            <div class="invalid-feedback">
+                                Please select a minecraft version.
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select
+                                id="createBuild"
+                                class="form-select"
+                                required
+                            >
+                                <option selected disabled></option>
+                                {#if build_info && document.getElementById("createSoftware") && document.getElementById("createSoftware").value in build_info}
+                                    {#if document.getElementById("createMc") && document.getElementById("createMc").value in build_info[document.getElementById("createSoftware").value]}
+                                        {#each build_info[document.getElementById("createSoftware").value][document.getElementById("createMc").value] as version (version)}
+                                            <option>{version}</option>
+                                        {/each}
+                                    {/if}
+                                {/if}
+                            </select>
+                            <label for="createBuild"
+                                >Server Software Version
+                            </label>
+                            <div class="invalid-feedback">
+                                Please select a server software version.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">Cancel</button
+                        >
+                        <button type="submit" class="btn btn-success"
+                            >Create server
+                        </button>
                     </div>
                 </form>
-                <div class="modal-footer">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">Cancel</button
-                    >
-                    <button
-                        type="button"
-                        class="btn btn-success"
-                        on:click={() =>
-                            document
-                                .getElementById("createSoftwareForm")
-                                .submit()}>Create server</button
-                    >
-                </div>
             </div>
         </div>
     </div>
