@@ -1,8 +1,17 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
-    import "bootstrap/dist/js/bootstrap.js";
+    import { Toast, Modal } from "bootstrap/dist/js/bootstrap.js";
     import { sha256 } from "barely-sha256";
-    import { MoonStarsFill, BrightnessHighFill } from "svelte-bootstrap-icons";
+    import {
+        MoonStarsFill,
+        BrightnessHighFill,
+        XCircleFill,
+        CardList,
+        TrashFill,
+        PencilFill,
+        PlayFill,
+        StopFill,
+    } from "svelte-bootstrap-icons";
     import { onMount } from "svelte";
 
     function capitalize(string) {
@@ -34,6 +43,14 @@
 
     $: updateTheme(darkMode);
 
+    function show_exception(title, subtitle) {
+        console.error(`Andromeda exception:\n${title} - ${subtitle}`);
+        const toastElement = document.getElementById("warningtoast");
+        toastElement.querySelector("strong").innerText = title;
+        toastElement.querySelector(".toast-body").innerText = subtitle;
+        Toast.getOrCreateInstance(toastElement).show();
+    }
+
     let page_state = "loading";
     const websocket = new WebSocket(
         `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:29836`,
@@ -43,6 +60,9 @@
     let statelist = {};
     let software_info = {};
     let build_info = {};
+    let queue = [];
+    let confirming_delete_server;
+    let createSoftwareModal;
 
     websocket.onerror = () => {
         page_state = "error";
@@ -59,27 +79,33 @@
         switch (jdata.data) {
             case "welcome":
                 page_state = "server";
+                break;
 
             case "serverlist":
                 serverlist = jdata.servers;
                 statelist = jdata.states;
+                queue = jdata.queue;
                 console.log(serverlist);
                 console.log(statelist);
+                break;
 
             case "serverstate":
                 if (!statelist) {
                     return;
                 }
                 statelist[jdata.server] = jdata.state;
+                break;
 
             case "softwareinfo":
                 software_info[jdata.software] = jdata.mc_versions;
+                break;
 
             case "buildinfo":
                 if (!(jdata.software in build_info)) {
                     build_info[jdata.software] = {};
                 }
                 build_info[jdata.software][jdata.mc_version] = jdata.builds;
+                break;
 
             case "exception":
                 switch (jdata.msg) {
@@ -87,7 +113,24 @@
                         document.getElementById("pass_input").value = "";
                         document.getElementById("pass_text").innerText =
                             "Your password is incorrect!\nIf you forgot your password, reset it using the CLI tool on this server.";
+                        break;
+
+                    default:
+                        show_exception("Unhandeled exception", jdata.msg);
+                        break;
                 }
+                break;
+
+            case "queue":
+                queue = jdata.queue;
+                break;
+
+            default:
+                show_exception(
+                    "Communication exception",
+                    "Unknown data message type: " + jdata.data,
+                );
+                break;
         }
     };
 
@@ -95,6 +138,17 @@
         switch (state) {
             case "server":
                 websocket.send('{"data": "listservers"}');
+                document
+                    .getElementById("createServer")
+                    .addEventListener("hidden.bs.modal", () => {
+                        document.getElementById("createName").value = "";
+                        document.getElementById("createMc").value = "";
+                        document.getElementById("createSoftware").value = "";
+                        document.getElementById("createBuild").value = "";
+                        document
+                            .getElementById("createSoftwareForm")
+                            .classList.remove("was-validated");
+                    });
         }
     }
 
@@ -149,6 +203,7 @@
         if (!software_val) {
             return;
         }
+        document.getElementById("createBuild").selectedIndex = 0;
         if (software_val in build_info) {
             if (mc_version in build_info[software_val]) {
                 return;
@@ -166,16 +221,50 @@
         );
     }
 
+    function openCreateModal() {
+        createSoftwareModal = new Modal("#createServer");
+        createSoftwareModal.show();
+    }
+
     function onSubmitCreateServer(event) {
         const form = document.getElementById("createSoftwareForm");
         event.preventDefault();
         if (!form.checkValidity()) {
             event.stopPropagation();
         } else {
-            console.log("createSoftwareForm valid!");
+            createSoftwareModal.hide();
+
+            const mcversion = document.getElementById("createMc").value;
+            const software = document.getElementById("createSoftware").value;
+            const name = document.getElementById("createName").value;
+            const softwarebuild = document.getElementById("createBuild").value;
+            websocket.send(
+                JSON.stringify({
+                    data: "installserver",
+                    mcversion,
+                    software,
+                    name,
+                    softwareversion: softwarebuild,
+                }),
+            );
         }
 
         form.classList.add("was-validated");
+    }
+
+    function deleteServer(server_name) {
+        if (confirming_delete_server == server_name) {
+            confirming_delete_server = undefined;
+            websocket.send(
+                JSON.stringify({ data: "deleteserver", name: server_name }),
+            );
+        } else {
+            confirming_delete_server = server_name;
+            show_exception(
+                "Confirmation",
+                "Click again to confirm the deletion",
+            );
+        }
     }
 </script>
 
@@ -217,7 +306,7 @@
                     </li>
                 </ul>
                 <button
-                    class="btn btn-outline-secondary"
+                    class="btn btn-outline-secondary mx-1"
                     type="button"
                     on:click={() => (darkMode = !darkMode)}
                 >
@@ -225,6 +314,28 @@
                         <BrightnessHighFill />
                     {:else}
                         <MoonStarsFill />
+                    {/if}
+                </button>
+                <button
+                    class="btn btn-outline-primary mx-1 position-relative"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#queueModal"
+                    aria-controls="queueModal"
+                    disabled={page_state != "server"}
+                >
+                    <CardList />
+                    {#if queue}
+                        {#if queue.length}
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary"
+                            >
+                                {queue.length}
+                                <span class="visually-hidden"
+                                    >running tasks</span
+                                >
+                            </span>
+                        {/if}
                     {/if}
                 </button>
             </div>
@@ -268,7 +379,7 @@
                         {@const server_settings = serverlist[server]}
                         {@const server_state = statelist[server]}
                         <div class="col">
-                            <div class="card m-2" style="width: 15rem;">
+                            <div class="card m-2" style="width: 18rem;">
                                 <div class="card-header">
                                     <h6
                                         class="card-text text-{statetoclass(
@@ -295,6 +406,7 @@
                                 </div>
                                 <div class="card-footer">
                                     <button class="btn btn-primary">
+                                        <PencilFill />
                                         Edit
                                     </button>
                                     {#if server_state == "stopped"}
@@ -302,6 +414,7 @@
                                             class="btn btn-outline-success"
                                             on:click={() => startServer(server)}
                                         >
+                                            <PlayFill />
                                             Start
                                         </button>
                                     {:else if server_state == "running"}
@@ -309,6 +422,7 @@
                                             class="btn btn-outline-danger"
                                             on:click={() => stopServer(server)}
                                         >
+                                            <StopFill />
                                             Stop
                                         </button>
                                     {:else}
@@ -323,6 +437,12 @@
                                             {capitalize(server_state)}...
                                         </span>
                                     {/if}
+                                    <button
+                                        class="btn btn-outline-secondary"
+                                        on:click={() => deleteServer(server)}
+                                    >
+                                        <TrashFill />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -336,9 +456,8 @@
             <button
                 class="btn btn-primary mx-1"
                 data-bs-toggle="modal"
-                data-bs-target="#createServer">Create server</button
+                on:click={() => openCreateModal()}>Create server</button
             >
-            <button class="btn btn-outline-danger mx-1">Delete server</button>
         </div>
     {/if}
 
@@ -447,12 +566,75 @@
                             class="btn btn-secondary"
                             data-bs-dismiss="modal">Cancel</button
                         >
-                        <button type="submit" class="btn btn-success"
-                            >Create server
+                        <button type="submit" class="btn btn-success">
+                            Create server
                         </button>
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div class="toast-container p-3 bottom-0 end-0">
+        <div
+            class="toast"
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+            id="warningtoast"
+        >
+            <div class="toast-header">
+                <XCircleFill class="text-danger" />
+                <strong class="me-auto ms-1"></strong>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="toast"
+                    aria-label="Close"
+                />
+            </div>
+            <div class="toast-body"></div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="queueModal">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">Task queue</h5>
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="offcanvas"
+                aria-label="Close"
+            />
+        </div>
+        <div class="offcanvas-body">
+            {#if queue}
+                {#if queue.length}
+                    {#each queue as queueItem}
+                        {@const title = queueItem.split(":", 1)[0]}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5>{title}</h5>
+                                <h6
+                                    class="card-subtitle mb-2 text-body-secondary"
+                                >
+                                    {queueItem.replace(title + ": ", "")}
+                                </h6>
+                                <div class="progress" role="progressbar">
+                                    <div
+                                        class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                        style="width: 100%"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    {/each}
+                {:else}
+                    <p>No tasks are running.</p>
+                {/if}
+            {:else}
+                <p>No tasks are running.</p>
+            {/if}
         </div>
     </div>
 </main>
