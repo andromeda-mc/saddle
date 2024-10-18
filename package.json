@@ -9,9 +9,10 @@
         "start": "sirv public --no-clear"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^28.0.0",
+        "@rollup/plugin-commonjs": "^28.0.1",
         "@rollup/plugin-node-resolve": "^15.3.0",
         "@rollup/plugin-terser": "^0.4.4",
+        "@types/bootstrap": "^5.2.10",
         "rollup": "^4.24.0",
         "rollup-plugin-css-only": "^4.5.2",
         "rollup-plugin-livereload": "^2.0.5",
@@ -22,7 +23,7 @@
         "@popperjs/core": "^2.11.8",
         "barely-sha256": "^0.0.1",
         "bootstrap": "^5.3.3",
-        "sirv-cli": "^2.0.2",
+        "sirv-cli": "^3.0.0",
         "svelte-bootstrap-icons": "^3.1.1"
     }
 }
