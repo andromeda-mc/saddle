@@ -50,8 +50,7 @@
         toastElement.querySelector("strong").innerText = title;
         toastElement.querySelector(".toast-body").innerText = subtitle;
         Toast.getOrCreateInstance(toastElement).show();
-        exception_list.push({ title, subtitle });
-        exception_list = [...exception_list];
+        exception_list = [{ title, subtitle }, ...exception_list];
     }
 
     function show_notification(title, subtitle) {
@@ -676,7 +675,7 @@
                         </div>
                     {/each}
                 {:else}
-                    <p>No exceptions have occurred.</p>
+                    <p>No exception has occurred.</p>
                 {/if}
             {/if}
             <hr />
