@@ -622,9 +622,6 @@
             </div>
             <div class="toast-body" />
         </div>
-    </div>
-
-    <div class="toast-container p-3 bottom-0 end-0">
         <div
             class="toast"
             role="alert"
