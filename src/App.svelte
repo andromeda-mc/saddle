@@ -11,6 +11,7 @@
         PencilFill,
         PlayFill,
         StopFill,
+        InfoCircleFill,
     } from "svelte-bootstrap-icons";
     import { onMount } from "svelte";
 
@@ -51,6 +52,14 @@
         Toast.getOrCreateInstance(toastElement).show();
         exception_list.push({ title, subtitle });
         exception_list = [...exception_list];
+    }
+
+    function show_notification(title, subtitle) {
+        console.log(`Andromeda notification:\n${title} - ${subtitle}`);
+        const toastElement = document.getElementById("notificationtoast");
+        toastElement.querySelector("strong").innerText = title;
+        toastElement.querySelector(".toast-body").innerText = subtitle;
+        Toast.getOrCreateInstance(toastElement).show();
     }
 
     let page_state = "loading";
@@ -270,7 +279,7 @@
             );
         } else {
             confirming_delete_server = server_name;
-            show_exception(
+            show_notification(
                 "Confirmation",
                 "Click again to confirm the deletion",
             );
@@ -342,26 +351,20 @@
                     disabled={page_state != "server"}
                 >
                     <CardList />
-                    {#if queue || exception_list}
-                        {#if exception_list.length}
-                            <span
-                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                            >
-                                {exception_list.length}
-                                <span class="visually-hidden">
-                                    exceptions
-                                </span>
-                            </span>
-                        {:else if queue.length}
-                            <span
-                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary"
-                            >
-                                {queue.length}
-                                <span class="visually-hidden"
-                                    >running tasks</span
-                                >
-                            </span>
-                        {/if}
+                    {#if exception_list && exception_list.length}
+                        <span
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        >
+                            {exception_list.length}
+                            <span class="visually-hidden"> exceptions </span>
+                        </span>
+                    {:else if queue && queue.length}
+                        <span
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary"
+                        >
+                            {queue.length}
+                            <span class="visually-hidden">running tasks</span>
+                        </span>
                     {/if}
                 </button>
             </div>
@@ -475,8 +478,6 @@
                     {/each}
                 </div>
             </div>
-        {:else}
-            <div class="translate-middle">Here are no servers. Create one!</div>
         {/if}
         <div class="d-flex justify-content-center">
             <button
@@ -611,6 +612,28 @@
         >
             <div class="toast-header">
                 <XCircleFill class="text-danger" />
+                <strong class="me-auto ms-1" />
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="toast"
+                    aria-label="Close"
+                />
+            </div>
+            <div class="toast-body" />
+        </div>
+    </div>
+
+    <div class="toast-container p-3 bottom-0 end-0">
+        <div
+            class="toast"
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+            id="notificationtoast"
+        >
+            <div class="toast-header">
+                <InfoCircleFill class="text-info" />
                 <strong class="me-auto ms-1" />
                 <button
                     type="button"
