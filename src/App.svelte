@@ -49,6 +49,8 @@
         toastElement.querySelector("strong").innerText = title;
         toastElement.querySelector(".toast-body").innerText = subtitle;
         Toast.getOrCreateInstance(toastElement).show();
+        exception_list.push({ title, subtitle });
+        exception_list = [...exception_list];
     }
 
     let page_state = "loading";
@@ -60,6 +62,7 @@
     let statelist = {};
     let software_info = {};
     let build_info = {};
+    let exception_list = [];
     let queue = [];
     let confirming_delete_server;
     let createSoftwareModal;
@@ -113,6 +116,13 @@
                         document.getElementById("pass_input").value = "";
                         document.getElementById("pass_text").innerText =
                             "Your password is incorrect!\nIf you forgot your password, reset it using the CLI tool on this server.";
+                        break;
+
+                    case "cs: java not found":
+                        show_exception(
+                            "Failed to install the server",
+                            `Java ${jdata.java_ver} is not installed.\nPlease install it on the backend.`,
+                        );
                         break;
 
                     default:
@@ -266,6 +276,11 @@
             );
         }
     }
+
+    function delException(index) {
+        exception_list.splice(index, 1);
+        exception_list = [...exception_list];
+    }
 </script>
 
 <main>
@@ -317,7 +332,9 @@
                     {/if}
                 </button>
                 <button
-                    class="btn btn-outline-primary mx-1 position-relative"
+                    class="btn btn{page_state == 'server'
+                        ? ''
+                        : '-outline'}-primary mx-1 position-relative"
                     type="button"
                     data-bs-toggle="offcanvas"
                     data-bs-target="#queueModal"
@@ -325,8 +342,17 @@
                     disabled={page_state != "server"}
                 >
                     <CardList />
-                    {#if queue}
-                        {#if queue.length}
+                    {#if queue || exception_list}
+                        {#if exception_list.length}
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                            >
+                                {exception_list.length}
+                                <span class="visually-hidden">
+                                    exceptions
+                                </span>
+                            </span>
+                        {:else if queue.length}
                             <span
                                 class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary"
                             >
@@ -411,7 +437,7 @@
                                     </button>
                                     {#if server_state == "stopped"}
                                         <button
-                                            class="btn btn-outline-success"
+                                            class="btn btn-success"
                                             on:click={() => startServer(server)}
                                         >
                                             <PlayFill />
@@ -419,7 +445,7 @@
                                         </button>
                                     {:else if server_state == "running"}
                                         <button
-                                            class="btn btn-outline-danger"
+                                            class="btn btn-danger"
                                             on:click={() => stopServer(server)}
                                         >
                                             <StopFill />
@@ -427,7 +453,7 @@
                                         </button>
                                     {:else}
                                         <span
-                                            class="btn btn-outline-secondary disabled"
+                                            class="btn btn-secondary disabled"
                                             disabled
                                         >
                                             <span
@@ -585,7 +611,7 @@
         >
             <div class="toast-header">
                 <XCircleFill class="text-danger" />
-                <strong class="me-auto ms-1"></strong>
+                <strong class="me-auto ms-1" />
                 <button
                     type="button"
                     class="btn-close"
@@ -593,7 +619,7 @@
                     aria-label="Close"
                 />
             </div>
-            <div class="toast-body"></div>
+            <div class="toast-body" />
         </div>
     </div>
 
@@ -608,6 +634,32 @@
             />
         </div>
         <div class="offcanvas-body">
+            {#if exception_list}
+                {#if exception_list.length}
+                    {#each exception_list as exceptionItem, index}
+                        <div class="card border-danger mb-3">
+                            <div class="card-header d-flex">
+                                Exception
+                                <button
+                                    type="button"
+                                    class="btn-close ms-auto"
+                                    aria-label="Dismiss"
+                                    on:click={() => delException(index)}
+                                />
+                            </div>
+                            <div class="card-body">
+                                <h5>{exceptionItem.title}</h5>
+                                <h6 class="card-subtitle mb-2">
+                                    {exceptionItem.subtitle}
+                                </h6>
+                            </div>
+                        </div>
+                    {/each}
+                {:else}
+                    <p>No exceptions have occurred.</p>
+                {/if}
+            {/if}
+            <hr />
             {#if queue}
                 {#if queue.length}
                     {#each queue as queueItem}
@@ -632,8 +684,6 @@
                 {:else}
                     <p>No tasks are running.</p>
                 {/if}
-            {:else}
-                <p>No tasks are running.</p>
             {/if}
         </div>
     </div>
