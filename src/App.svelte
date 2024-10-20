@@ -15,7 +15,7 @@
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
     import { onMount } from "svelte";
-    import StartStopButton from "../StartStopButton.svelte";
+    import StartStopButton from "StartStopButton.svelte";
 
     function capitalize(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
