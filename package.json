@@ -21,6 +21,8 @@
     },
     "dependencies": {
         "@popperjs/core": "^2.11.8",
+        "@xterm/addon-fit": "^0.10.0",
+        "@xterm/xterm": "^5.5.0",
         "barely-sha256": "^0.0.1",
         "bootstrap": "^5.3.3",
         "sirv-cli": "^3.0.0",

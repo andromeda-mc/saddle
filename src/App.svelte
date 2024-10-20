@@ -1,5 +1,6 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
+    import "@xterm/xterm/css/xterm.css";
     import { Toast, Modal } from "bootstrap/dist/js/bootstrap.js";
     import { sha256 } from "barely-sha256";
     import {
@@ -13,6 +14,8 @@
         StopFill,
         InfoCircleFill,
     } from "svelte-bootstrap-icons";
+    import { Terminal } from "@xterm/xterm";
+    import { FitAddon } from "@xterm/addon-fit";
     import { onMount } from "svelte";
 
     function capitalize(string) {
@@ -73,7 +76,11 @@
     let exception_list = [];
     let queue = [];
     let confirming_delete_server;
-    let createSoftwareModal;
+    let createServerModal;
+    let mgsServer;
+    let mgsConsole;
+    let mgsConsoleFit;
+    let mgsState;
 
     websocket.onerror = () => {
         page_state = "error";
@@ -86,7 +93,7 @@
     };
     websocket.onmessage = (message) => {
         const jdata = JSON.parse(message.data);
-        console.log(jdata);
+        // console.log(jdata);
         switch (jdata.data) {
             case "welcome":
                 page_state = "server";
@@ -96,8 +103,6 @@
                 serverlist = jdata.servers;
                 statelist = jdata.states;
                 queue = jdata.queue;
-                console.log(serverlist);
-                console.log(statelist);
                 break;
 
             case "serverstate":
@@ -143,6 +148,13 @@
                 queue = jdata.queue;
                 break;
 
+            case "log_history":
+                mgsConsole.write("\x1b[2J\x1b[H" + jdata.log);
+
+            case "console_logging":
+                mgsConsole.write(jdata.msg);
+                break;
+
             default:
                 show_exception(
                     "Communication exception",
@@ -166,6 +178,27 @@
                         document
                             .getElementById("createSoftwareForm")
                             .classList.remove("was-validated");
+                    });
+                document
+                    .getElementById("manageServer")
+                    .addEventListener("hide.bs.modal", () => {
+                        websocket.send(
+                            JSON.stringify({
+                                data: "stopconsolelogging",
+                                server_name: mgsServer,
+                            }),
+                        );
+                    });
+
+                document
+                    .getElementById("manageServer")
+                    .addEventListener("show.bs.modal", () => {
+                        websocket.send(
+                            JSON.stringify({
+                                data: "startconsolelogging",
+                                server_name: mgsServer,
+                            }),
+                        );
                     });
         }
     }
@@ -240,8 +273,8 @@
     }
 
     function openCreateModal() {
-        createSoftwareModal = new Modal("#createServer");
-        createSoftwareModal.show();
+        createServerModal = new Modal("#createServer");
+        createServerModal.show();
     }
 
     function onSubmitCreateServer(event) {
@@ -250,7 +283,7 @@
         if (!form.checkValidity()) {
             event.stopPropagation();
         } else {
-            createSoftwareModal.hide();
+            createServerModal.hide();
 
             const mcversion = document.getElementById("createMc").value;
             const software = document.getElementById("createSoftware").value;
@@ -289,6 +322,53 @@
         exception_list.splice(index, 1);
         exception_list = [...exception_list];
     }
+
+    function openManageServer(server_name) {
+        mgsServer = server_name;
+        const modal = new Modal("#manageServer");
+        modal.show();
+        mgsState = "console";
+    }
+
+    function isMgsStateActive(origstate, state) {
+        return origstate == state ? "active" : "";
+    }
+
+    function mgsInitTerminal() {
+        mgsConsole = new Terminal({
+            fontFamily: "Noto Sans Mono,monospace",
+            letterSpacing: 0,
+        });
+        mgsConsoleFit = new FitAddon();
+        mgsConsole.loadAddon(mgsConsoleFit);
+        mgsConsole.open(document.getElementById("mgs-terminal"));
+        mgsConsoleFit.fit();
+        mgsConsole.onData((data) => {
+            websocket.send(
+                JSON.stringify({
+                    data: "console_write",
+                    server_name: mgsServer,
+                    content: data,
+                }),
+            );
+        });
+    }
+
+    function customMgsStateAction(state) {
+        if (!state || !websocket) {
+            return;
+        }
+        if (state != "console") {
+            websocket.send(
+                JSON.stringify({
+                    data: "stopconsolelogging",
+                    server_name: mgsServer,
+                }),
+            );
+        }
+    }
+
+    $: customMgsStateAction(mgsState);
 </script>
 
 <main>
@@ -433,9 +513,13 @@
                                     </p>
                                 </div>
                                 <div class="card-footer">
-                                    <button class="btn btn-primary">
+                                    <button
+                                        class="btn btn-primary"
+                                        on:click={() =>
+                                            openManageServer(server)}
+                                    >
                                         <PencilFill />
-                                        Edit
+                                        Manage
                                     </button>
                                     {#if server_state == "stopped"}
                                         <button
@@ -505,7 +589,7 @@
                         class="btn-close"
                         data-bs-dismiss="modal"
                         aria-label="Close"
-                    ></button>
+                    />
                 </div>
                 <form
                     id="createSoftwareForm"
@@ -597,6 +681,126 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div
+        class="modal fade modal-xl"
+        id="manageServer"
+        tabindex="-1"
+        aria-labelledby="manageServerLabel"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="manageServerLabel">
+                        Managing Server: {mgsServer}
+                    </h1>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                    />
+                </div>
+                <div class="modal-body row">
+                    <div class="col-2">
+                        <nav
+                            id="manageServerSidebar"
+                            class="h-100 flex-column align-items-stretch pe-4 border-end"
+                        >
+                            <nav class="nav nav-pills flex-column">
+                                <button
+                                    type="button"
+                                    class="nav-link my-1 text-start {isMgsStateActive(
+                                        mgsState,
+                                        'console',
+                                    )}"
+                                    on:click={() => (mgsState = "console")}
+                                >
+                                    Console
+                                </button>
+                                <button
+                                    type="button"
+                                    class="nav-link my-1 text-start {isMgsStateActive(
+                                        mgsState,
+                                        'settings',
+                                    )}"
+                                    on:click={() => (mgsState = "settings")}
+                                >
+                                    Settings
+                                </button>
+                                <button
+                                    type="button"
+                                    class="nav-link my-1 text-start {isMgsStateActive(
+                                        mgsState,
+                                        'players',
+                                    )}"
+                                    on:click={() => (mgsState = "players")}
+                                >
+                                    Players
+                                </button>
+                                <button
+                                    type="button"
+                                    class="nav-link my-1 text-start {isMgsStateActive(
+                                        mgsState,
+                                        'files',
+                                    )}"
+                                    on:click={() => (mgsState = "files")}
+                                >
+                                    Files
+                                </button>
+                                <button
+                                    type="button"
+                                    class="nav-link my-1 text-start {isMgsStateActive(
+                                        mgsState,
+                                        'world',
+                                    )}"
+                                    on:click={() => (mgsState = "world")}
+                                >
+                                    World
+                                </button>
+                                <button
+                                    type="button"
+                                    class="nav-link my-1 text-start {isMgsStateActive(
+                                        mgsState,
+                                        'guest',
+                                    )}"
+                                    on:click={() => (mgsState = "guest")}
+                                >
+                                    Guest Access
+                                </button>
+                            </nav>
+                        </nav>
+                    </div>
+                    <div class="col">
+                        {#if mgsState == "console"}
+                            <div
+                                id="mgs-terminal"
+                                on:load={mgsInitTerminal()}
+                            />
+                        {:else if mgsState == "settings"}
+                            settings
+                        {:else if mgsState == "players"}
+                            players
+                        {:else if mgsState == "files"}
+                            files
+                        {:else if mgsState == "world"}
+                            world
+                        {:else if mgsState == "guest"}
+                            access
+                        {/if}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        data-bs-dismiss="modal">Close</button
+                    >
+                </div>
             </div>
         </div>
     </div>
@@ -709,4 +913,9 @@
 </main>
 
 <style>
+    @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@100..900&display=swap");
+
+    :global(.xterm-rows) {
+        letter-spacing: 0 !important;
+    }
 </style>
