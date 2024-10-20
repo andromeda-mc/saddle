@@ -10,13 +10,12 @@
         CardList,
         TrashFill,
         PencilFill,
-        PlayFill,
-        StopFill,
         InfoCircleFill,
     } from "svelte-bootstrap-icons";
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
     import { onMount } from "svelte";
+    import StartStopButton from "../StartStopButton.svelte";
 
     function capitalize(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -520,34 +519,12 @@
                                         <PencilFill />
                                         Manage
                                     </button>
-                                    {#if server_state == "stopped"}
-                                        <button
-                                            class="btn btn-success"
-                                            on:click={() => startServer(server)}
-                                        >
-                                            <PlayFill />
-                                            Start
-                                        </button>
-                                    {:else if server_state == "running"}
-                                        <button
-                                            class="btn btn-danger"
-                                            on:click={() => stopServer(server)}
-                                        >
-                                            <StopFill />
-                                            Stop
-                                        </button>
-                                    {:else}
-                                        <span
-                                            class="btn btn-secondary disabled"
-                                            disabled
-                                        >
-                                            <span
-                                                class="spinner-border spinner-border-sm"
-                                                aria-hidden="true"
-                                            ></span>
-                                            {capitalize(server_state)}...
-                                        </span>
-                                    {/if}
+                                    <StartStopButton
+                                        {server_state}
+                                        {server}
+                                        {startServer}
+                                        {stopServer}
+                                    />
                                     <button
                                         class="btn btn-outline-secondary"
                                         on:click={() => deleteServer(server)}
@@ -690,6 +667,7 @@
         tabindex="-1"
         aria-labelledby="manageServerLabel"
         aria-hidden="true"
+        data-bs-backdrop="static"
     >
         <div class="modal-dialog">
             <div class="modal-content">
@@ -794,6 +772,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <StartStopButton
+                        server_state={statelist[mgsServer]}
+                        server={mgsServer}
+                        {startServer}
+                        {stopServer}
+                    />
                     <button
                         type="button"
                         class="btn btn-primary"
