@@ -179,27 +179,24 @@
                             .getElementById("createSoftwareForm")
                             .classList.remove("was-validated");
                     });
-                document
-                    .getElementById("manageServer")
-                    .addEventListener("hide.bs.modal", () => {
-                        websocket.send(
-                            JSON.stringify({
-                                data: "stopconsolelogging",
-                                server_name: mgsServer,
-                            }),
-                        );
-                    });
+                const mgs = document.getElementById("manageServer");
+                mgs.addEventListener("hide.bs.modal", () => {
+                    websocket.send(
+                        JSON.stringify({
+                            data: "stopconsolelogging",
+                            server_name: mgsServer,
+                        }),
+                    );
+                });
 
-                document
-                    .getElementById("manageServer")
-                    .addEventListener("show.bs.modal", () => {
-                        websocket.send(
-                            JSON.stringify({
-                                data: "startconsolelogging",
-                                server_name: mgsServer,
-                            }),
-                        );
-                    });
+                mgs.addEventListener("show.bs.modal", () => {
+                    websocket.send(
+                        JSON.stringify({
+                            data: "startconsolelogging",
+                            server_name: mgsServer,
+                        }),
+                    );
+                });
         }
     }
 
@@ -344,13 +341,15 @@
         mgsConsole.open(document.getElementById("mgs-terminal"));
         mgsConsoleFit.fit();
         mgsConsole.onData((data) => {
-            websocket.send(
-                JSON.stringify({
-                    data: "console_write",
-                    server_name: mgsServer,
-                    content: data,
-                }),
-            );
+            if (statelist[mgsServer] != "stopped") {
+                websocket.send(
+                    JSON.stringify({
+                        data: "console_write",
+                        server_name: mgsServer,
+                        content: data,
+                    }),
+                );
+            }
         });
     }
 
