@@ -11,6 +11,7 @@
         TrashFill,
         PencilFill,
         InfoCircleFill,
+        BoxArrowRight,
     } from "svelte-bootstrap-icons";
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
@@ -64,10 +65,6 @@
     }
 
     let page_state = "loading";
-    const websocket = new WebSocket(
-        `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:29836`,
-    );
-
     let serverlist = {};
     let statelist = {};
     let software_info = {};
@@ -80,88 +77,99 @@
     let mgsConsole;
     let mgsConsoleFit;
     let mgsState;
+    let websocket;
 
-    websocket.onerror = () => {
-        page_state = "error";
-    };
-    websocket.onclose = () => {
-        page_state = "error";
-    };
-    websocket.onopen = () => {
-        page_state = "login";
-    };
-    websocket.onmessage = (message) => {
-        const jdata = JSON.parse(message.data);
-        // console.log(jdata);
-        switch (jdata.data) {
-            case "welcome":
-                page_state = "server";
-                break;
+    function startWebsocket() {
+        websocket = new WebSocket(
+            `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:29836`,
+        );
 
-            case "serverlist":
-                serverlist = jdata.servers;
-                statelist = jdata.states;
-                queue = jdata.queue;
-                break;
+        websocket.onerror = () => {
+            page_state = "error";
+        };
+        websocket.onclose = () => {
+            page_state = "closed";
+        };
+        websocket.onopen = () => {
+            page_state = "login";
+        };
+        websocket.onmessage = (message) => {
+            const jdata = JSON.parse(message.data);
+            // console.log(jdata);
+            switch (jdata.data) {
+                case "welcome":
+                    page_state = "server";
+                    break;
 
-            case "serverstate":
-                if (!statelist) {
-                    return;
-                }
-                statelist[jdata.server] = jdata.state;
-                break;
+                case "serverlist":
+                    serverlist = jdata.servers;
+                    statelist = jdata.states;
+                    queue = jdata.queue;
+                    break;
 
-            case "softwareinfo":
-                software_info[jdata.software] = jdata.mc_versions;
-                break;
+                case "serverstate":
+                    if (!statelist) {
+                        return;
+                    }
+                    statelist[jdata.server] = jdata.state;
+                    break;
 
-            case "buildinfo":
-                if (!(jdata.software in build_info)) {
-                    build_info[jdata.software] = {};
-                }
-                build_info[jdata.software][jdata.mc_version] = jdata.builds;
-                break;
+                case "softwareinfo":
+                    software_info[jdata.software] = jdata.mc_versions;
+                    break;
 
-            case "exception":
-                switch (jdata.msg) {
-                    case "invalid login":
-                        document.getElementById("pass_input").value = "";
-                        document.getElementById("pass_text").innerText =
-                            "Your password is incorrect!\nIf you forgot your password, reset it using the CLI tool on this server.";
-                        break;
+                case "buildinfo":
+                    if (!(jdata.software in build_info)) {
+                        build_info[jdata.software] = {};
+                    }
+                    build_info[jdata.software][jdata.mc_version] = jdata.builds;
+                    break;
 
-                    case "cs: java not found":
-                        show_exception(
-                            "Failed to install the server",
-                            `Java ${jdata.java_ver} is not installed.\nPlease install it on the backend.`,
-                        );
-                        break;
+                case "exception":
+                    switch (jdata.msg) {
+                        case "invalid login":
+                            document.getElementById("pass_input").value = "";
+                            document.getElementById("pass_text").innerText =
+                                "Your password is incorrect!\nIf you forgot your password, reset it using the CLI tool on this server.";
+                            break;
 
-                    default:
-                        show_exception("Unhandeled exception", jdata.msg);
-                        break;
-                }
-                break;
+                        case "cs: java not found":
+                            show_exception(
+                                "Failed to install the server",
+                                `Java ${jdata.java_ver} is not installed.\nPlease install it on the backend.`,
+                            );
+                            break;
 
-            case "queue":
-                queue = jdata.queue;
-                break;
+                        default:
+                            show_exception("Unhandeled exception", jdata.msg);
+                            break;
+                    }
+                    break;
 
-            case "log_history":
-                mgsConsole.write("\x1b[2J\x1b[H" + jdata.log);
+                case "queue":
+                    queue = jdata.queue;
+                    break;
 
-            case "console_logging":
-                mgsConsole.write(jdata.msg);
-                break;
+                case "log_history":
+                    mgsConsole.write("\x1b[2J\x1b[H" + jdata.log);
 
-            default:
-                show_exception(
-                    "Communication exception",
-                    "Unknown data message type: " + jdata.data,
-                );
-                break;
-        }
-    };
+                case "console_logging":
+                    mgsConsole.write(jdata.msg);
+                    break;
+
+                default:
+                    show_exception(
+                        "Communication exception",
+                        "Unknown data message type: " + jdata.data,
+                    );
+                    break;
+            }
+        };
+    }
+
+    function logoutWebsocket() {
+        websocket.close();
+    }
 
     function customPageAction(state) {
         switch (state) {
@@ -367,6 +375,8 @@
     }
 
     $: customMgsStateAction(mgsState);
+
+    startWebsocket();
 </script>
 
 <main>
@@ -410,6 +420,7 @@
                     class="btn btn-outline-secondary mx-1"
                     type="button"
                     on:click={() => (darkMode = !darkMode)}
+                    title="Dark mode/Light mode"
                 >
                     {#if darkMode}
                         <BrightnessHighFill />
@@ -420,12 +431,24 @@
                 <button
                     class="btn btn{page_state == 'server'
                         ? ''
+                        : '-outline'}-secondary mx-1"
+                    type="button"
+                    disabled={page_state != "server"}
+                    on:click={() => websocket.close()}
+                    title="Log out"
+                >
+                    <BoxArrowRight />
+                </button>
+                <button
+                    class="btn btn{page_state == 'server'
+                        ? ''
                         : '-outline'}-primary mx-1 position-relative"
                     type="button"
                     data-bs-toggle="offcanvas"
                     data-bs-target="#queueModal"
                     aria-controls="queueModal"
                     disabled={page_state != "server"}
+                    title="Task list"
                 >
                     <CardList />
                     {#if exception_list && exception_list.length}
@@ -474,6 +497,17 @@
                 on:keydown={passEntered}
             />
             <div id="pass_text" class="form-text text-danger" />
+        </div>
+    {:else if page_state == "closed"}
+        <div
+            class="position-absolute top-50 start-50 translate-middle fs-1 text-center"
+        >
+            <p>Connection closed</p>
+            <button
+                class="btn btn-primary"
+                type="button"
+                on:click={() => startWebsocket()}>Log in</button
+            >
         </div>
     {:else if page_state == "server"}
         {#if serverlist && Object.keys(serverlist).length > 0}
