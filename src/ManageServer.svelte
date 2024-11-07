@@ -1,7 +1,6 @@
 <script>
     import { ExclamationTriangleFill } from "svelte-bootstrap-icons";
     import StartStopButton from "./StartStopButton.svelte";
-    import App from "./App.svelte";
     export let mgsServer;
     export let mgsProperties;
     export let statelist;
@@ -88,7 +87,7 @@
                                 </div>
                             {/if}
                             <table
-                                class="table table-dark table-striped table-bordered table-responsive"
+                                class="table table-striped table-bordered table-responsive"
                             >
                                 <tbody>
                                     {#each mgsProperties[mgsServer] as property, i}
@@ -124,7 +123,7 @@
                                                     <input
                                                         class="form-control"
                                                         type="text"
-                                                        on:focus={(d) =>
+                                                        on:focusout={(d) =>
                                                             setProperty(
                                                                 i,
                                                                 d.target.value,
@@ -141,7 +140,7 @@
                                                         max={type == "integer"
                                                             ? "10000"
                                                             : property[2][3]}
-                                                        on:focus={(d) =>
+                                                        on:focusout={(d) =>
                                                             setProperty(
                                                                 i,
                                                                 d.target.value.toString(),
