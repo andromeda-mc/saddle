@@ -1,22 +1,23 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
     import "@xterm/xterm/css/xterm.css";
-    import { Toast, Modal } from "bootstrap/dist/js/bootstrap.js";
+    import { Toast, Modal, ScrollSpy } from "bootstrap";
     import { sha256 } from "barely-sha256";
     import {
         MoonStarsFill,
         BrightnessHighFill,
-        XCircleFill,
         CardList,
         TrashFill,
         PencilFill,
-        InfoCircleFill,
         BoxArrowRight,
     } from "svelte-bootstrap-icons";
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
     import { onMount } from "svelte";
     import StartStopButton from "./StartStopButton.svelte";
+    import Queue from "./Queue.svelte";
+    import Toasts from "./Toasts.svelte";
+    import ManageServer from "./ManageServer.svelte";
 
     function capitalize(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -76,7 +77,6 @@
     let mgsServer;
     let mgsConsole;
     let mgsConsoleFit;
-    let mgsState;
     let websocket;
 
     function startWebsocket() {
@@ -167,10 +167,6 @@
         };
     }
 
-    function logoutWebsocket() {
-        websocket.close();
-    }
-
     function customPageAction(state) {
         switch (state) {
             case "server":
@@ -203,6 +199,16 @@
                             server_name: mgsServer,
                         }),
                     );
+                });
+
+                mgs.addEventListener("shown.bs.modal", () => {
+                    const scrollspy = new ScrollSpy(
+                        document.getElementById("mgsBody"),
+                        {
+                            target: "#manageServerSidebar",
+                        },
+                    );
+                    console.log(scrollspy);
                 });
         }
     }
@@ -331,11 +337,6 @@
         mgsServer = server_name;
         const modal = new Modal("#manageServer");
         modal.show();
-        mgsState = "console";
-    }
-
-    function isMgsStateActive(origstate, state) {
-        return origstate == state ? "active" : "";
     }
 
     function mgsInitTerminal() {
@@ -359,22 +360,6 @@
             }
         });
     }
-
-    function customMgsStateAction(state) {
-        if (!state || !websocket) {
-            return;
-        }
-        if (state != "console") {
-            websocket.send(
-                JSON.stringify({
-                    data: "stopconsolelogging",
-                    server_name: mgsServer,
-                }),
-            );
-        }
-    }
-
-    $: customMgsStateAction(mgsState);
 
     startWebsocket();
 </script>
@@ -404,18 +389,7 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria current="page" href="#">
-                            Servers
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">
-                            Settings
-                        </a>
-                    </li>
-                </ul>
+                <div class="navbar-nav me-auto mb-2 mb-lg-0" />
                 <button
                     class="btn btn-outline-secondary mx-1"
                     type="button"
@@ -429,12 +403,12 @@
                     {/if}
                 </button>
                 <button
-                    class="btn btn{page_state == 'server'
-                        ? ''
-                        : '-outline'}-secondary mx-1"
+                    class="btn btn{page_state == 'closed'
+                        ? '-outline'
+                        : ''}-secondary mx-1"
                     type="button"
-                    disabled={page_state != "server"}
                     on:click={() => websocket.close()}
+                    disabled={page_state == "closed"}
                     title="Log out"
                 >
                     <BoxArrowRight />
@@ -695,238 +669,15 @@
         </div>
     </div>
 
-    <div
-        class="modal fade modal-xl"
-        id="manageServer"
-        tabindex="-1"
-        aria-labelledby="manageServerLabel"
-        aria-hidden="true"
-        data-bs-backdrop="static"
-    >
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="manageServerLabel">
-                        Managing Server: {mgsServer}
-                    </h1>
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"
-                    />
-                </div>
-                <div class="modal-body row">
-                    <div class="col-2">
-                        <nav
-                            id="manageServerSidebar"
-                            class="h-100 flex-column align-items-stretch pe-4 border-end"
-                        >
-                            <nav class="nav nav-pills flex-column">
-                                <button
-                                    type="button"
-                                    class="nav-link my-1 text-start {isMgsStateActive(
-                                        mgsState,
-                                        'console',
-                                    )}"
-                                    on:click={() => (mgsState = "console")}
-                                >
-                                    Console
-                                </button>
-                                <button
-                                    type="button"
-                                    class="nav-link my-1 text-start {isMgsStateActive(
-                                        mgsState,
-                                        'settings',
-                                    )}"
-                                    on:click={() => (mgsState = "settings")}
-                                >
-                                    Settings
-                                </button>
-                                <button
-                                    type="button"
-                                    class="nav-link my-1 text-start {isMgsStateActive(
-                                        mgsState,
-                                        'players',
-                                    )}"
-                                    on:click={() => (mgsState = "players")}
-                                >
-                                    Players
-                                </button>
-                                <button
-                                    type="button"
-                                    class="nav-link my-1 text-start {isMgsStateActive(
-                                        mgsState,
-                                        'files',
-                                    )}"
-                                    on:click={() => (mgsState = "files")}
-                                >
-                                    Files
-                                </button>
-                                <button
-                                    type="button"
-                                    class="nav-link my-1 text-start {isMgsStateActive(
-                                        mgsState,
-                                        'world',
-                                    )}"
-                                    on:click={() => (mgsState = "world")}
-                                >
-                                    World
-                                </button>
-                                <button
-                                    type="button"
-                                    class="nav-link my-1 text-start {isMgsStateActive(
-                                        mgsState,
-                                        'guest',
-                                    )}"
-                                    on:click={() => (mgsState = "guest")}
-                                >
-                                    Guest Access
-                                </button>
-                            </nav>
-                        </nav>
-                    </div>
-                    <div class="col">
-                        {#if mgsState == "console"}
-                            <div
-                                id="mgs-terminal"
-                                on:load={mgsInitTerminal()}
-                            />
-                        {:else if mgsState == "settings"}
-                            settings
-                        {:else if mgsState == "players"}
-                            players
-                        {:else if mgsState == "files"}
-                            files
-                        {:else if mgsState == "world"}
-                            world
-                        {:else if mgsState == "guest"}
-                            access
-                        {/if}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <StartStopButton
-                        server_state={statelist[mgsServer]}
-                        server={mgsServer}
-                        {startServer}
-                        {stopServer}
-                    />
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        data-bs-dismiss="modal">Close</button
-                    >
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="toast-container p-3 bottom-0 end-0">
-        <div
-            class="toast"
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-            id="warningtoast"
-        >
-            <div class="toast-header">
-                <XCircleFill class="text-danger" />
-                <strong class="me-auto ms-1" />
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="toast"
-                    aria-label="Close"
-                />
-            </div>
-            <div class="toast-body" />
-        </div>
-        <div
-            class="toast"
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-            id="notificationtoast"
-        >
-            <div class="toast-header">
-                <InfoCircleFill class="text-info" />
-                <strong class="me-auto ms-1" />
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="toast"
-                    aria-label="Close"
-                />
-            </div>
-            <div class="toast-body" />
-        </div>
-    </div>
-
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="queueModal">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Task queue</h5>
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="offcanvas"
-                aria-label="Close"
-            />
-        </div>
-        <div class="offcanvas-body">
-            {#if exception_list}
-                {#if exception_list.length}
-                    {#each exception_list as exceptionItem, index}
-                        <div class="card border-danger mb-3">
-                            <div class="card-header d-flex">
-                                Exception
-                                <button
-                                    type="button"
-                                    class="btn-close ms-auto"
-                                    aria-label="Dismiss"
-                                    on:click={() => delException(index)}
-                                />
-                            </div>
-                            <div class="card-body">
-                                <h5>{exceptionItem.title}</h5>
-                                <h6 class="card-subtitle mb-2">
-                                    {exceptionItem.subtitle}
-                                </h6>
-                            </div>
-                        </div>
-                    {/each}
-                {:else}
-                    <p>No exception has occurred.</p>
-                {/if}
-            {/if}
-            <hr />
-            {#if queue}
-                {#if queue.length}
-                    {#each queue as queueItem}
-                        {@const title = queueItem.split(":", 1)[0]}
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>{title}</h5>
-                                <h6
-                                    class="card-subtitle mb-2 text-body-secondary"
-                                >
-                                    {queueItem.replace(title + ": ", "")}
-                                </h6>
-                                <div class="progress" role="progressbar">
-                                    <div
-                                        class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                                        style="width: 100%"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    {/each}
-                {:else}
-                    <p>No tasks are running.</p>
-                {/if}
-            {/if}
-        </div>
-    </div>
+    <ManageServer
+        {mgsServer}
+        {mgsInitTerminal}
+        {statelist}
+        {startServer}
+        {stopServer}
+    />
+    <Toasts />
+    <Queue {exception_list} {delException} {queue} />
 </main>
 
 <style>
