@@ -1,5 +1,7 @@
 <script>
+    import { ExclamationTriangleFill } from "svelte-bootstrap-icons";
     import StartStopButton from "./StartStopButton.svelte";
+    import App from "./App.svelte";
     export let mgsServer;
     export let mgsProperties;
     export let statelist;
@@ -67,10 +69,24 @@
                     </div>
                     <div id="mgsSettings">
                         <h4>Settings</h4>
-                        <div class="alert alert-warning" role="alert">
-                            Changing a setting requires a server restart!
+                        <div
+                            class="alert alert-warning d-flex align-items-center"
+                            role="alert"
+                        >
+                            <ExclamationTriangleFill />
+                            <div class="ms-1">
+                                Changing a setting requires a server restart!
+                            </div>
                         </div>
                         {#if mgsProperties[mgsServer] && mgsProperties[mgsServer].length}
+                            {#if !mgsProperties[mgsServer][0][1]}
+                                <div class="alert alert-info" role="alert">
+                                    This is a empty template. Starting the
+                                    server will fill in the default values.<br
+                                    />
+                                    This <em>should</em> be only temporary.
+                                </div>
+                            {/if}
                             <table
                                 class="table table-dark table-striped table-bordered table-responsive"
                             >
