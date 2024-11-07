@@ -77,6 +77,7 @@
     let mgsServer;
     let mgsConsole;
     let mgsConsoleFit;
+    let mgsProperties = {};
     let websocket;
 
     function startWebsocket() {
@@ -157,6 +158,10 @@
                     mgsConsole.write(jdata.msg);
                     break;
 
+                case "properties":
+                    mgsProperties[jdata.server_name] = jdata.properties;
+                    break;
+
                 default:
                     show_exception(
                         "Communication exception",
@@ -170,7 +175,7 @@
     function customPageAction(state) {
         switch (state) {
             case "server":
-                websocket.send('{"data": "listservers"}');
+                websocket.send('{"data":"listservers"}');
                 document
                     .getElementById("createServer")
                     .addEventListener("hidden.bs.modal", () => {
@@ -193,22 +198,19 @@
                 });
 
                 mgs.addEventListener("show.bs.modal", () => {
+                    mgsInitTerminal();
                     websocket.send(
                         JSON.stringify({
-                            data: "startconsolelogging",
+                            data: "startconsolelogging+getproperties",
                             server_name: mgsServer,
                         }),
                     );
                 });
 
                 mgs.addEventListener("shown.bs.modal", () => {
-                    const scrollspy = new ScrollSpy(
-                        document.getElementById("mgsBody"),
-                        {
-                            target: "#manageServerSidebar",
-                        },
-                    );
-                    console.log(scrollspy);
+                    new ScrollSpy(document.getElementById("mgsBody"), {
+                        target: "#manageServerSidebar",
+                    });
                 });
         }
     }
@@ -340,6 +342,9 @@
     }
 
     function mgsInitTerminal() {
+        if (mgsConsole) {
+            return;
+        }
         mgsConsole = new Terminal({
             fontFamily: "Noto Sans Mono,monospace",
             letterSpacing: 0,
@@ -359,6 +364,22 @@
                 );
             }
         });
+    }
+
+    function setProperty(index, value) {
+        if (mgsProperties[mgsServer][index][1] === value) {
+            return;
+        }
+        mgsProperties[mgsServer][index][1] = value;
+
+        websocket.send(
+            JSON.stringify({
+                data: "setproperty",
+                server_name: mgsServer,
+                property: mgsProperties[mgsServer][index][0],
+                value: value,
+            }),
+        );
     }
 
     startWebsocket();
@@ -671,10 +692,11 @@
 
     <ManageServer
         {mgsServer}
-        {mgsInitTerminal}
+        {mgsProperties}
         {statelist}
         {startServer}
         {stopServer}
+        {setProperty}
     />
     <Toasts />
     <Queue {exception_list} {delException} {queue} />
