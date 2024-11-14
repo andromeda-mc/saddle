@@ -79,11 +79,17 @@
     let mgsConsoleFit;
     let mgsProperties = {};
     let websocket;
+    let server_url;
+
+    const url_params = new URLSearchParams(window.location.search);
+    if (url_params.has("remote")) {
+        server_url = url_params.get("remote");
+    } else {
+        server_url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}`;
+    }
 
     function startWebsocket() {
-        websocket = new WebSocket(
-            `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:29836`,
-        );
+        websocket = new WebSocket(server_url + ":29836");
 
         websocket.onerror = () => {
             page_state = "error";
@@ -100,6 +106,9 @@
             switch (jdata.data) {
                 case "welcome":
                     page_state = "server";
+                    document
+                        .getElementById("loginForm")
+                        .classList.remove("was-validated");
                     break;
 
                 case "serverlist":
@@ -129,15 +138,24 @@
                 case "exception":
                     switch (jdata.msg) {
                         case "invalid login":
-                            document.getElementById("pass_input").value = "";
-                            document.getElementById("pass_text").innerText =
-                                "Your password is incorrect!\nIf you forgot your password, reset it using the CLI tool on this server.";
+                            const login = document.getElementById("loginPass");
+                            login.value = "";
+                            login.setCustomValidity(
+                                "Your password is incorrect!\nIf you forgot your password, reset it using the CLI tool on this server.",
+                            );
                             break;
 
                         case "cs: java not found":
                             show_exception(
                                 "Failed to install the server",
                                 `Java ${jdata.java_ver} is not installed.\nPlease install it on the backend.`,
+                            );
+                            break;
+
+                        case "cs: already exists":
+                            show_exception(
+                                "Failed to install the server",
+                                "There already exists a server with the same name.",
                             );
                             break;
 
@@ -216,17 +234,6 @@
     }
 
     $: customPageAction(page_state);
-
-    function passEntered(d) {
-        if (d.key == "Enter") {
-            websocket.send(
-                JSON.stringify({
-                    data: "auth",
-                    hash: sha256(document.getElementById("pass_input").value),
-                }),
-            );
-        }
-    }
 
     function startServer(server_name) {
         websocket.send(
@@ -315,6 +322,18 @@
         form.classList.add("was-validated");
     }
 
+    function onLogin(event) {
+        const form = document.getElementById("loginForm");
+        event.preventDefault();
+        event.stopPropagation();
+        const password = document.getElementById("loginPass").value;
+        websocket.send(
+            JSON.stringify({ data: "auth", hash: sha256(password) }),
+        );
+
+        form.classList.add("was-validated");
+    }
+
     function deleteServer(server_name) {
         if (confirming_delete_server == server_name) {
             confirming_delete_server = undefined;
@@ -382,6 +401,21 @@
         );
     }
 
+    function login() {
+        if (document.getElementById("connectRemote").checked) {
+            server_url = document.getElementById("connectURL").value;
+        } else {
+            server_url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}`;
+        }
+
+        if (/^wss?:\/{2}[^:]*$/.test(server_url)) {
+            startWebsocket();
+        } else {
+            document.getElementById("connectError").innerText =
+                "Invalid URL specified!";
+        }
+    }
+
     startWebsocket();
 </script>
 
@@ -432,7 +466,7 @@
                     disabled={page_state == "closed"}
                     title="Log out"
                 >
-                    <BoxArrowRight />
+                    <BoxArrowRight /> Log out
                 </button>
                 <button
                     class="btn btn{page_state == 'server'
@@ -445,7 +479,7 @@
                     disabled={page_state != "server"}
                     title="Task list"
                 >
-                    <CardList />
+                    <CardList /> Task list
                     {#if exception_list && exception_list.length}
                         <span
                             class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -482,27 +516,80 @@
             Failed to connect to the backend server!
         </div>
     {:else if page_state == "login"}
-        <div class="position-absolute top-50 start-50 translate-middle">
-            <input
-                id="pass_input"
-                class="form-control px-2"
-                type="password"
-                placeholder="Enter your password here"
-                aria-label="password input"
-                on:keydown={passEntered}
-            />
-            <div id="pass_text" class="form-text text-danger" />
+        <div class="position-absolute top-50 start-50 translate-middle card">
+            <form
+                id="loginForm"
+                class="needs-validation"
+                on:submit={(event) => onLogin(event)}
+                novalidate
+            >
+                <div class="card-body">
+                    <h5 class="card-title">
+                        Currently connected with: {server_url}
+                    </h5>
+                    <h6 class="card-subtitle">
+                        To change this, log out and click remote login.
+                    </h6>
+                    <div class="form-floating mb-3">
+                        <input
+                            id="loginPass"
+                            class="form-control mt-3"
+                            type="password"
+                            required
+                        />
+                        <label for="loginPass">Password</label>
+                        <div class="invalid-feedback">
+                            Your password is incorrect!<br />
+                            If you forgot your password, reset it using the CLI tool
+                            on this server.
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            </form>
         </div>
     {:else if page_state == "closed"}
-        <div
-            class="position-absolute top-50 start-50 translate-middle fs-1 text-center"
-        >
-            <p>Connection closed</p>
-            <button
-                class="btn btn-primary"
-                type="button"
-                on:click={() => startWebsocket()}>Log in</button
+        <div class="position-absolute top-50 start-50 translate-middle card">
+            <div class="card-body">
+                <h5 class="card-title">Connection closed</h5>
+                <div class="form-check">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        value=""
+                        id="connectRemote"
+                        on:change={(d) => {
+                            document.getElementById("connectURL").disabled =
+                                !d.target.checked;
+                        }}
+                    />
+                    <label class="form-check-label" for="connectRemote">
+                        Use remote connection
+                    </label>
+                </div>
+                <div class="input-group">
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="connectURL"
+                        placeholder="Server Address"
+                        disabled
+                    />
+                    <span class="input-group-text">:29836</span>
+                </div>
+            </div>
+            <div
+                class="card-footer d-flex justify-content-end align-items-center"
             >
+                <span class="text-danger" id="connectError" />
+                <button
+                    type="button"
+                    class="btn btn-primary ms-1"
+                    on:click={() => login()}>Connect</button
+                >
+            </div>
         </div>
     {:else if page_state == "server"}
         {#if serverlist && Object.keys(serverlist).length > 0}
@@ -674,6 +761,12 @@
                                 Please select a server software version.
                             </div>
                         </div>
+                        <p>
+                            By creating a server, you agree to the
+                            <a href="https://minecraft.net/eula"
+                                >Minecraft EULA</a
+                            >.
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button
