@@ -80,6 +80,7 @@
     let mgsProperties = {};
     let websocket;
     let server_url;
+    let hasConnected;
 
     const url_params = new URLSearchParams(window.location.search);
     if (url_params.has("remote")) {
@@ -91,14 +92,19 @@
     function startWebsocket() {
         websocket = new WebSocket(server_url + ":29836");
 
-        websocket.onerror = () => {
-            page_state = "error";
-        };
         websocket.onclose = () => {
             page_state = "closed";
+            if (!hasConnected) {
+                show_exception(
+                    "Failed to connect to the server!",
+                    "Connection failed",
+                );
+            }
+            hasConnected = false;
         };
         websocket.onopen = () => {
             page_state = "login";
+            hasConnected = true;
         };
         websocket.onmessage = (message) => {
             const jdata = JSON.parse(message.data);
@@ -508,12 +514,6 @@
                 style="--bs-spinner-border-width: 0.25rem"
             />
             Connecting...
-        </div>
-    {:else if page_state == "error"}
-        <div
-            class="position-absolute top-50 start-50 translate-middle fs-1 text-center"
-        >
-            Failed to connect to the backend server!
         </div>
     {:else if page_state == "login"}
         <div class="position-absolute top-50 start-50 translate-middle card">
