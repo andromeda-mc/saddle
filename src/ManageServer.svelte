@@ -77,11 +77,11 @@
                     style="max-height: 80vh;"
                 >
                     <div id="mgsConsole">
-                        <h4><Terminal />Console</h4>
+                        <h4><Terminal class="me-1" />Console</h4>
                         <div id="mgs-terminal" />
                     </div>
                     <div id="mgsSettings">
-                        <h4><GearFill />Settings</h4>
+                        <h4><GearFill class="me-1" />Settings</h4>
                         <div
                             class="alert alert-warning d-flex align-items-center"
                             role="alert"
@@ -183,16 +183,16 @@
                         {/if}
                     </div>
                     <div id="mgsPlayers">
-                        <h4><PeopleFill />Players</h4>
+                        <h4><PeopleFill class="me-1" />Players</h4>
                     </div>
                     <div id="mgsFiles">
-                        <h4><Folder />Files</h4>
+                        <h4><Folder class="me-1" />Files</h4>
                     </div>
                     <div id="mgsWorld">
-                        <h4><GlobeAmericas />World</h4>
+                        <h4><GlobeAmericas class="me-1" />World</h4>
                     </div>
                     <div id="mgsGuest">
-                        <h4><PersonFillAdd />Guest Access</h4>
+                        <h4><PersonFillAdd class="me-1" />Guest Access</h4>
                     </div>
                 </div>
             </div>
