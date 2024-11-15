@@ -115,7 +115,8 @@
                                                     (Wiki entry)
                                                 </a>
                                                 <br />
-                                                <span class="text-white-50"
+                                                <span
+                                                    class="text-body-secondary"
                                                     >Default value: <i
                                                         >{property[2][2]}</i
                                                     ></span
