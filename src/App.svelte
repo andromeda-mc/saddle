@@ -574,7 +574,9 @@
                         type="text"
                         class="form-control"
                         id="connectURL"
-                        placeholder="Server Address"
+                        placeholder="{location.protocol === 'https:'
+                            ? 'wss'
+                            : 'ws'}://{location.hostname}"
                         disabled
                     />
                     <span class="input-group-text">:29836</span>

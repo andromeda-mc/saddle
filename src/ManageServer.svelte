@@ -95,90 +95,108 @@
                             <table
                                 class="table table-striped table-bordered table-responsive"
                             >
-                                {#each mgsProperties[mgsServer] as property, i}
-                                    {@const type = property[2][1]}
-                                    <tr class="align-middle">
-                                        <td
-                                            >{property[2][0]}
-                                            <a
-                                                class="fw-light fst-italic link-info"
-                                                href="https://minecraft.wiki/w/Server.properties#{property[0]}"
-                                                target="_blank"
-                                            >
-                                                (Wiki entry)
-                                            </a>
-                                        </td>
-                                        <td>
-                                            {#if type == "boolean"}
-                                                <div class="form-switch">
-                                                    <input
-                                                        class="form-check-input"
-                                                        type="checkbox"
-                                                        role="switch"
-                                                        checked={property[1] ===
-                                                            "true"}
-                                                        on:change={(d) =>
-                                                            setProperty(
-                                                                i,
-                                                                d.target.checked.toString(),
-                                                            )}
-                                                    />
-                                                </div>
-                                            {:else if type == "string"}
-                                                <input
-                                                    class="form-control"
-                                                    type="text"
-                                                    on:focusout={(d) =>
-                                                        setProperty(
-                                                            i,
-                                                            d.target.value,
-                                                        )}
-                                                    value={property[1].replaceAll(
-                                                        "\\",
-                                                        "",
-                                                    )}
-                                                />
-                                            {:else if type == "integer" || type == "integer_range"}
-                                                <input
-                                                    class="form-control"
-                                                    type="number"
-                                                    min={type == "integer"
-                                                        ? "0"
-                                                        : property[2][3]}
-                                                    max={type == "integer"
-                                                        ? "10000"
-                                                        : property[2][4]}
-                                                    on:focusout={(d) =>
-                                                        setProperty(
-                                                            i,
-                                                            d.target.value.toString(),
-                                                        )}
-                                                    value={property[1]}
-                                                />
-                                            {:else if type == "string_dropdown"}
-                                                <select class="form-control">
-                                                    {#each Object.entries(property[2][3]) as option}
-                                                        <option
-                                                            value={option[0]}
-                                                            selected={property[1] ==
-                                                                option[0]}
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Option</th>
+                                        <th scope="col">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {#each mgsProperties[mgsServer] as property, i}
+                                        {@const type = property[2][1]}
+                                        <tr class="align-middle">
+                                            <td>
+                                                {property[2][0]}
+                                                <a
+                                                    class="fw-light fst-italic link-info"
+                                                    href="https://minecraft.wiki/w/Server.properties#{property[0]}"
+                                                    target="_blank"
+                                                >
+                                                    (Wiki entry)
+                                                </a>
+                                                <br />
+                                                <span class="text-white-50"
+                                                    >Default value: <i
+                                                        >{property[2][2]}</i
+                                                    ></span
+                                                >
+                                            </td>
+                                            <td>
+                                                {#if type == "boolean"}
+                                                    <div class="form-switch">
+                                                        <input
+                                                            class="form-check-input"
+                                                            type="checkbox"
+                                                            role="switch"
+                                                            checked={property[1] ===
+                                                                "true"}
                                                             on:change={(d) =>
                                                                 setProperty(
                                                                     i,
-                                                                    d.target
-                                                                        .value,
+                                                                    d.target.checked.toString(),
                                                                 )}
-                                                        >
-                                                            {option[1]}
-                                                        </option>
-                                                    {/each}
-                                                </select>
-                                            {:else}
-                                                {property[1]}
-                                            {/if}
-                                        </td>
-                                    </tr>
-                                {/each}
+                                                        />
+                                                    </div>
+                                                {:else if type == "string"}
+                                                    <input
+                                                        class="form-control"
+                                                        type="text"
+                                                        on:focusout={(d) =>
+                                                            setProperty(
+                                                                i,
+                                                                d.target.value,
+                                                            )}
+                                                        value={property[1].replaceAll(
+                                                            "\\",
+                                                            "",
+                                                        )}
+                                                    />
+                                                {:else if type == "integer" || type == "integer_range"}
+                                                    <input
+                                                        class="form-control"
+                                                        type="number"
+                                                        min={type == "integer"
+                                                            ? "0"
+                                                            : property[2][3]}
+                                                        max={type == "integer"
+                                                            ? "10000"
+                                                            : property[2][4]}
+                                                        on:focusout={(d) =>
+                                                            setProperty(
+                                                                i,
+                                                                d.target.value.toString(),
+                                                            )}
+                                                        value={property[1]}
+                                                    />
+                                                {:else if type == "string_dropdown"}
+                                                    <select
+                                                        class="form-control"
+                                                    >
+                                                        {#each Object.entries(property[2][3]) as option}
+                                                            <option
+                                                                value={option[0]}
+                                                                selected={property[1] ==
+                                                                    option[0]}
+                                                                on:change={(
+                                                                    d,
+                                                                ) =>
+                                                                    setProperty(
+                                                                        i,
+                                                                        d.target
+                                                                            .value,
+                                                                    )}
+                                                            >
+                                                                {option[1]}
+                                                            </option>
+                                                        {/each}
+                                                    </select>
+                                                {:else}
+                                                    {property[1]}
+                                                {/if}
+                                            </td>
+                                        </tr>
+                                    {/each}
+                                </tbody>
                             </table>
                         {/if}
                     </div>
