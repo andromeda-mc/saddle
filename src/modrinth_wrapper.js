@@ -1,0 +1,12 @@
+import { ProjectsService, VersionsService } from "modrinthjs";
+
+export async function search(software, version, query) {
+    const facets = [["versions:" + version], ["server_side:optional", "server_side:required"], ["categories:" + software.toLowerCase()], ["project_type:mod"]]
+    return await ProjectsService.searchProjects(query, JSON.stringify(facets))
+}
+
+export async function get_latest_ver(software, version, id) {
+    return await VersionsService.getProjectVersions(id, `["${software.toLowerCase()}"]`, `["${version}"]`, true)
+}
+
+

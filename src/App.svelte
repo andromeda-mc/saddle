@@ -14,10 +14,12 @@
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
     import { onMount } from "svelte";
+    import { modsToList } from "./utils.js";
     import StartStopButton from "./StartStopButton.svelte";
     import Queue from "./Queue.svelte";
     import Toasts from "./Toasts.svelte";
     import ManageServer from "./ManageServer.svelte";
+    import Mods from "./Mods.svelte";
 
     function capitalize(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -36,7 +38,7 @@
         }
     }
 
-    let darkMode = localStorage.getItem("darkMode") != "false";
+    let darkMode = localStorage.getItem("darkMode") !== "false";
     function updateTheme(mode) {
         localStorage.setItem("darkMode", darkMode);
         document.body.setAttribute("data-bs-theme", mode ? "dark" : "light");
@@ -177,6 +179,7 @@
 
                 case "log_history":
                     mgsConsole.write("\x1b[2J\x1b[H" + jdata.log);
+                    break;
 
                 case "console_logging":
                     mgsConsole.write(jdata.msg);
@@ -184,6 +187,10 @@
 
                 case "properties":
                     mgsProperties[jdata.server_name] = jdata.properties;
+                    break;
+
+                case "settings":
+                    serverlist[jdata.server_name] = jdata.settings;
                     break;
 
                 default:
@@ -258,7 +265,7 @@
         const software_val = software.value;
         const mc_version = document.getElementById("createMc");
         const build_html = document.getElementById("createBuild");
-        const is_vanilla = software_val == "Vanilla";
+        const is_vanilla = software_val === "Vanilla";
         build_html.required = !is_vanilla;
         build_html.disabled = is_vanilla;
         mc_version.selectedIndex = 0;
@@ -285,7 +292,7 @@
                 return;
             }
         }
-        if (software_val == "Vanilla" || mc_version == "") {
+        if (software_val === "Vanilla" || mc_version === "") {
             return;
         }
         websocket.send(
@@ -341,7 +348,7 @@
     }
 
     function deleteServer(server_name) {
-        if (confirming_delete_server == server_name) {
+        if (confirming_delete_server === server_name) {
             confirming_delete_server = undefined;
             websocket.send(
                 JSON.stringify({ data: "deleteserver", name: server_name }),
@@ -379,7 +386,7 @@
         mgsConsole.open(document.getElementById("mgs-terminal"));
         mgsConsoleFit.fit();
         mgsConsole.onData((data) => {
-            if (statelist[mgsServer] != "stopped") {
+            if (statelist[mgsServer] !== "stopped") {
                 websocket.send(
                     JSON.stringify({
                         data: "console_write",
@@ -420,6 +427,24 @@
             document.getElementById("connectError").innerText =
                 "Invalid URL specified!";
         }
+    }
+
+    function installMod(id, ver_id, url) {
+        if (modsToList(serverlist[mgsServer].mods).includes(id)) {
+            show_notification(
+                "Ignored Mod Installation",
+                "A mod (or a dependency of a mod) was not installed because it is already installed.",
+            );
+        }
+        websocket.send(
+            JSON.stringify({
+                data: "installmod",
+                server_name: mgsServer,
+                mod_id: id,
+                mod_ver_id: ver_id,
+                mod_jar: url,
+            }),
+        );
     }
 
     startWebsocket();
@@ -464,25 +489,25 @@
                     {/if}
                 </button>
                 <button
-                    class="btn btn{page_state == 'closed'
+                    class="btn btn{page_state === 'closed'
                         ? '-outline'
                         : ''}-secondary mx-1"
                     type="button"
                     on:click={() => websocket.close()}
-                    disabled={page_state == "closed"}
+                    disabled={page_state === "closed"}
                     title="Log out"
                 >
                     <BoxArrowRight /> Log out
                 </button>
                 <button
-                    class="btn btn{page_state == 'server'
+                    class="btn btn{page_state === 'server'
                         ? ''
                         : '-outline'}-primary mx-1 position-relative"
                     type="button"
                     data-bs-toggle="offcanvas"
                     data-bs-target="#queueModal"
                     aria-controls="queueModal"
-                    disabled={page_state != "server"}
+                    disabled={page_state !== "server"}
                     title="Task list"
                 >
                     <CardList /> Task list
@@ -505,7 +530,7 @@
             </div>
         </div>
     </nav>
-    {#if page_state == "loading"}
+    {#if page_state === "loading"}
         <div
             class="position-absolute top-50 start-50 translate-middle fs-1 text-nowrap"
         >
@@ -515,7 +540,7 @@
             />
             Connecting...
         </div>
-    {:else if page_state == "login"}
+    {:else if page_state === "login"}
         <div class="position-absolute top-50 start-50 translate-middle card">
             <form
                 id="loginForm"
@@ -550,7 +575,7 @@
                 </div>
             </form>
         </div>
-    {:else if page_state == "closed"}
+    {:else if page_state === "closed"}
         <div class="position-absolute top-50 start-50 translate-middle card">
             <div class="card-body">
                 <h5 class="card-title">Connection closed</h5>
@@ -593,7 +618,7 @@
                 >
             </div>
         </div>
-    {:else if page_state == "server"}
+    {:else if page_state === "server"}
         {#if serverlist && Object.keys(serverlist).length > 0}
             <div class="container">
                 <div
@@ -619,7 +644,7 @@
                                         class="card-subtitle mb-2 text-body-secondary"
                                     >
                                         {capitalize(server_settings.software)}
-                                        {server_settings.software_version != ""
+                                        {server_settings.software_version !== ""
                                             ? `(${server_settings.software_version})`
                                             : ""}
                                         {server_settings.mc_version}
@@ -789,10 +814,12 @@
         {mgsServer}
         {mgsProperties}
         {statelist}
+        {serverlist}
         {startServer}
         {stopServer}
         {setProperty}
     />
+    <Mods {serverlist} {mgsServer} {installMod} />
     <Toasts />
     <Queue {exception_list} {delException} {queue} />
 </main>

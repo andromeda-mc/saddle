@@ -10,12 +10,12 @@
     export let server_state, server, startServer, stopServer;
 </script>
 
-{#if server_state == "stopped"}
+{#if server_state === "stopped"}
     <button class="btn btn-success" on:click={() => startServer(server)}>
         <PlayFill />
         Start
     </button>
-{:else if server_state == "running"}
+{:else if server_state === "running"}
     <button class="btn btn-danger" on:click={() => stopServer(server)}>
         <StopFill />
         Stop

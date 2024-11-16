@@ -7,14 +7,33 @@
         Folder,
         GlobeAmericas,
         PersonFillAdd,
+        Plugin,
+        Download,
+        Heart,
+        InfoCircle,
     } from "svelte-bootstrap-icons";
     import StartStopButton from "./StartStopButton.svelte";
+    import { format, modsToList } from "./utils.js";
+    import { ProjectsService } from "modrinthjs";
     export let mgsServer;
     export let mgsProperties;
     export let statelist;
+    export let serverlist;
     export let startServer;
     export let stopServer;
     export let setProperty;
+    let modsList;
+
+    function createModsList(list) {
+        if (!list) {
+            return;
+        }
+        modsList = ProjectsService.getProjects(
+            JSON.stringify(modsToList(list.mods)),
+        );
+    }
+
+    $: createModsList(serverlist[mgsServer]);
 </script>
 
 <div
@@ -24,6 +43,7 @@
     aria-labelledby="manageServerLabel"
     aria-hidden="true"
     data-bs-backdrop="static"
+    on:show.bs.modal={() => createModsList(serverlist[mgsServer])}
 >
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
@@ -68,13 +88,21 @@
                             <PersonFillAdd />
                             Guest Access
                         </a>
+                        {#if serverlist[mgsServer] && serverlist[mgsServer].software !== "Vanilla"}
+                            <a class="nav-link text-body" href="#mgsMods">
+                                <Plugin />
+                                {serverlist[mgsServer].software == "Paper"
+                                    ? "Plugins"
+                                    : "Mods"}
+                            </a>
+                        {/if}
                     </nav>
                 </nav>
                 <div
                     id="mgsBody"
                     class="overflow-auto p-3"
                     data-bs-smooth-scroll="true"
-                    style="max-height: 80vh;"
+                    style="max-height: 78vh;"
                 >
                     <div id="mgsConsole">
                         <h4><Terminal class="me-1" />Console</h4>
@@ -83,10 +111,10 @@
                     <div id="mgsSettings">
                         <h4><GearFill class="me-1" />Settings</h4>
                         <div
-                            class="alert alert-warning d-flex align-items-center"
+                            class="alert alert-info d-flex align-items-center"
                             role="alert"
                         >
-                            <ExclamationTriangleFill />
+                            <InfoCircle />
                             <div class="ms-1">
                                 Changing a setting requires a server restart!
                             </div>
@@ -213,6 +241,135 @@
                     <div id="mgsGuest">
                         <h4><PersonFillAdd class="me-1" />Guest Access</h4>
                     </div>
+                    {#if serverlist[mgsServer] && serverlist[mgsServer].software !== "Vanilla"}
+                        <div id="mgsMods">
+                            <h4>
+                                <Plugin class="me-1" />{serverlist[mgsServer]
+                                    .software == "Paper"
+                                    ? "Plugins"
+                                    : "Mods"}
+                            </h4>
+                            <div
+                                class="alert alert-warning d-flex align-items-center"
+                                role="alert"
+                            >
+                                <ExclamationTriangleFill />
+                                <div class="ms-1">
+                                    (Un)installing {serverlist[mgsServer]
+                                        .software == "Paper"
+                                        ? "plugins"
+                                        : "mods"}
+                                    while the server is running is not recommended!
+                                </div>
+                            </div>
+                            {#if serverlist[mgsServer].software == "Paper"}
+                                <div
+                                    class="alert alert-info d-flex align-items-center"
+                                    role="alert"
+                                >
+                                    <InfoCircle />
+                                    <div class="ms-1">
+                                        Paper plugins are currently not
+                                        supported.
+                                    </div>
+                                </div>
+                            {:else}
+                                {#if serverlist[mgsServer].mods.length}
+                                    {#await modsList}
+                                        <div class="card my-1">
+                                            <div class="d-flex">
+                                                <div
+                                                    class="bg-secondary"
+                                                    style="width: 128px; height: 128px;"
+                                                />
+                                                <div class="card-body">
+                                                    <h5
+                                                        class="card-title placeholder-glow"
+                                                    >
+                                                        <span
+                                                            class="placeholder col-6"
+                                                        />
+                                                    </h5>
+                                                    <p
+                                                        class="card-text placeholder-glow"
+                                                    >
+                                                        <span
+                                                            class="placeholder col-7"
+                                                        />
+                                                        <span
+                                                            class="placeholder col-4"
+                                                        />
+                                                        <span
+                                                            class="placeholder col-5"
+                                                        />
+                                                        <span
+                                                            class="placeholder col-6"
+                                                        />
+                                                        <span
+                                                            class="placeholder col-8"
+                                                        />
+                                                        <span
+                                                            class="placeholder col-3"
+                                                        />
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {:then data}
+                                        {#each data as mod}
+                                            <div class="card my-1">
+                                                <div class="d-flex">
+                                                    <img
+                                                        src={mod.icon_url}
+                                                        alt="logo"
+                                                        height="128"
+                                                    />
+                                                    <div class="card-body">
+                                                        <h5
+                                                            class="card-title d-flex justify-content-between"
+                                                        >
+                                                            <a
+                                                                class="link-info"
+                                                                target="_blank"
+                                                                href="https://modrinth.com/mod/{mod.slug}"
+                                                            >
+                                                                {mod.title}
+                                                            </a>
+                                                            <div>
+                                                                <Download
+                                                                    class="me-1"
+                                                                />{format(
+                                                                    mod.downloads,
+                                                                )}
+                                                                <Heart
+                                                                    class="ms-2 me-1"
+                                                                />{format(
+                                                                    mod.followers,
+                                                                )}
+                                                            </div>
+                                                        </h5>
+                                                        <p class="card-text">
+                                                            {mod.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {/each}
+                                    {/await}
+                                {:else}
+                                    <p>It's empty. No mods inside here.</p>
+                                {/if}
+                                <button
+                                    type="button"
+                                    class="btn btn-success"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modManager"
+                                >
+                                    Install Mods...
+                                </button>
+                            {/if}
+                        </div>
+                    {/if}
                 </div>
             </div>
             <div class="modal-footer">

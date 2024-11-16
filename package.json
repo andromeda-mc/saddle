@@ -25,6 +25,7 @@
         "@xterm/xterm": "^5.5.0",
         "barely-sha256": "^0.0.1",
         "bootstrap": "^5.3.3",
+        "modrinthjs": "^2.0.7",
         "sirv-cli": "^3.0.0",
         "svelte-bootstrap-icons": "^3.1.1"
     }
