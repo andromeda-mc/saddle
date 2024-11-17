@@ -24,6 +24,9 @@
     }
 
     function install(id) {
+        const install_optional =
+            document.getElementById("installOptional").checked;
+
         get_latest_ver(
             serverlist[mgsServer].software,
             serverlist[mgsServer].mc_version,
@@ -35,6 +38,13 @@
 
             if (latest_ver.dependencies.length) {
                 for (const depend of latest_ver.dependencies) {
+                    if (
+                        depend.dependency_type == "optional" &&
+                        !install_optional
+                    ) {
+                        continue;
+                    }
+
                     let depend_ver;
                     if (depend.version_id) {
                         depend_ver = VersionsService.getVersion(
@@ -72,7 +82,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="manageServerLabel">
-                    Mod Manager
+                    Install Mods and Plugins
                 </h1>
                 <button
                     type="button"
@@ -87,9 +97,20 @@
                     type="text"
                     id="modsSearch"
                     class="form-control"
-                    placeholder="Search for mods"
+                    placeholder="Search for mods or plugins"
                     on:keydown={searchEntered}
                 />
+                <div class="form-check">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        value=""
+                        id="installOptional"
+                    />
+                    <label class="form-check-label" for="installOptional">
+                        Also install optional dependencies
+                    </label>
+                </div>
                 {#await result}
                     <div class="card my-1">
                         <div class="d-flex">

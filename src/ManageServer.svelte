@@ -242,12 +242,13 @@
                         <h4><PersonFillAdd class="me-1" />Guest Access</h4>
                     </div>
                     {#if serverlist[mgsServer] && serverlist[mgsServer].software !== "Vanilla"}
+                        {@const type =
+                            serverlist[mgsServer].software == "Paper"
+                                ? "Plugins"
+                                : "Mods"}
                         <div id="mgsMods">
                             <h4>
-                                <Plugin class="me-1" />{serverlist[mgsServer]
-                                    .software == "Paper"
-                                    ? "Plugins"
-                                    : "Mods"}
+                                <Plugin class="me-1" />{type}
                             </h4>
                             <div
                                 class="alert alert-warning d-flex align-items-center"
@@ -255,119 +256,105 @@
                             >
                                 <ExclamationTriangleFill />
                                 <div class="ms-1">
-                                    (Un)installing {serverlist[mgsServer]
-                                        .software == "Paper"
-                                        ? "plugins"
-                                        : "mods"}
+                                    (Un)installing {type.toLowerCase()}
                                     while the server is running is not recommended!
                                 </div>
                             </div>
-                            {#if serverlist[mgsServer].software == "Paper"}
-                                <div
-                                    class="alert alert-info d-flex align-items-center"
-                                    role="alert"
-                                >
-                                    <InfoCircle />
-                                    <div class="ms-1">
-                                        Paper plugins are currently not
-                                        supported.
+                            {#if serverlist[mgsServer].mods.length}
+                                {#await modsList}
+                                    <div class="card my-1">
+                                        <div class="d-flex">
+                                            <div
+                                                class="bg-secondary"
+                                                style="width: 128px; height: 128px;"
+                                            />
+                                            <div class="card-body">
+                                                <h5
+                                                    class="card-title placeholder-glow"
+                                                >
+                                                    <span
+                                                        class="placeholder col-6"
+                                                    />
+                                                </h5>
+                                                <p
+                                                    class="card-text placeholder-glow"
+                                                >
+                                                    <span
+                                                        class="placeholder col-7"
+                                                    />
+                                                    <span
+                                                        class="placeholder col-4"
+                                                    />
+                                                    <span
+                                                        class="placeholder col-5"
+                                                    />
+                                                    <span
+                                                        class="placeholder col-6"
+                                                    />
+                                                    <span
+                                                        class="placeholder col-8"
+                                                    />
+                                                    <span
+                                                        class="placeholder col-3"
+                                                    />
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            {:else}
-                                {#if serverlist[mgsServer].mods.length}
-                                    {#await modsList}
+                                {:then data}
+                                    {#each data as mod}
                                         <div class="card my-1">
                                             <div class="d-flex">
-                                                <div
-                                                    class="bg-secondary"
-                                                    style="width: 128px; height: 128px;"
+                                                <img
+                                                    src={mod.icon_url}
+                                                    alt="logo"
+                                                    height="128"
                                                 />
                                                 <div class="card-body">
                                                     <h5
-                                                        class="card-title placeholder-glow"
+                                                        class="card-title d-flex justify-content-between"
                                                     >
-                                                        <span
-                                                            class="placeholder col-6"
-                                                        />
+                                                        <a
+                                                            class="link-info"
+                                                            target="_blank"
+                                                            href="https://modrinth.com/mod/{mod.slug}"
+                                                        >
+                                                            {mod.title}
+                                                        </a>
+                                                        <div>
+                                                            <Download
+                                                                class="me-1"
+                                                            />{format(
+                                                                mod.downloads,
+                                                            )}
+                                                            <Heart
+                                                                class="ms-2 me-1"
+                                                            />{format(
+                                                                mod.followers,
+                                                            )}
+                                                        </div>
                                                     </h5>
-                                                    <p
-                                                        class="card-text placeholder-glow"
-                                                    >
-                                                        <span
-                                                            class="placeholder col-7"
-                                                        />
-                                                        <span
-                                                            class="placeholder col-4"
-                                                        />
-                                                        <span
-                                                            class="placeholder col-5"
-                                                        />
-                                                        <span
-                                                            class="placeholder col-6"
-                                                        />
-                                                        <span
-                                                            class="placeholder col-8"
-                                                        />
-                                                        <span
-                                                            class="placeholder col-3"
-                                                        />
+                                                    <p class="card-text">
+                                                        {mod.description}
                                                     </p>
                                                 </div>
                                             </div>
                                         </div>
-                                    {:then data}
-                                        {#each data as mod}
-                                            <div class="card my-1">
-                                                <div class="d-flex">
-                                                    <img
-                                                        src={mod.icon_url}
-                                                        alt="logo"
-                                                        height="128"
-                                                    />
-                                                    <div class="card-body">
-                                                        <h5
-                                                            class="card-title d-flex justify-content-between"
-                                                        >
-                                                            <a
-                                                                class="link-info"
-                                                                target="_blank"
-                                                                href="https://modrinth.com/mod/{mod.slug}"
-                                                            >
-                                                                {mod.title}
-                                                            </a>
-                                                            <div>
-                                                                <Download
-                                                                    class="me-1"
-                                                                />{format(
-                                                                    mod.downloads,
-                                                                )}
-                                                                <Heart
-                                                                    class="ms-2 me-1"
-                                                                />{format(
-                                                                    mod.followers,
-                                                                )}
-                                                            </div>
-                                                        </h5>
-                                                        <p class="card-text">
-                                                            {mod.description}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {/each}
-                                    {/await}
-                                {:else}
-                                    <p>It's empty. No mods inside here.</p>
-                                {/if}
-                                <button
-                                    type="button"
-                                    class="btn btn-success"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modManager"
-                                >
-                                    Install Mods...
-                                </button>
+                                    {/each}
+                                {/await}
+                            {:else}
+                                <p>
+                                    It's empty. No {type.toLowerCase()} inside here.
+                                </p>
                             {/if}
+                            <button
+                                type="button"
+                                class="btn btn-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modManager"
+                            >
+                                Install {type}...
+                            </button>
                         </div>
                     {/if}
                 </div>
