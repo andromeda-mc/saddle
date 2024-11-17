@@ -305,11 +305,20 @@
                                     {#each data as mod}
                                         <div class="card my-1">
                                             <div class="d-flex">
-                                                <img
-                                                    src={mod.icon_url}
-                                                    alt="logo"
-                                                    height="128"
-                                                />
+                                                {#if mod.icon_url}
+                                                    <img
+                                                        src={mod.icon_url}
+                                                        alt="logo"
+                                                        height="128"
+                                                    />
+                                                {:else}
+                                                    <div
+                                                        class="bg-secondary d-flex align-items-center justify-content-center text-light"
+                                                        style="width: 128px; height: 128px;"
+                                                    >
+                                                        No logo
+                                                    </div>
+                                                {/if}
                                                 <div class="card-body">
                                                     <h5
                                                         class="card-title d-flex justify-content-between"

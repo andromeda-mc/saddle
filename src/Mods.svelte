@@ -76,6 +76,9 @@
     aria-labelledby="modManagerLabel"
     aria-hidden="true"
     data-bs-backdrop="static"
+    on:show.bs.modal={() => {
+        document.getElementById("modsSearch").value = "";
+    }}
     on:shown.bs.modal={advSearch}
 >
     <div class="modal-dialog modal-xl">
@@ -142,11 +145,20 @@
                         {#each data.hits as hit}
                             <div class="card my-1">
                                 <div class="d-flex">
-                                    <img
-                                        src={hit.icon_url}
-                                        alt="logo"
-                                        height="128"
-                                    />
+                                    {#if hit.icon_url}
+                                        <img
+                                            src={hit.icon_url}
+                                            alt="logo"
+                                            height="128"
+                                        />
+                                    {:else}
+                                        <div
+                                            class="bg-secondary d-flex align-items-center justify-content-center text-light"
+                                            style="width: 128px; height: 128px;"
+                                        >
+                                            No logo
+                                        </div>
+                                    {/if}
                                     <div class="card-body">
                                         <h5
                                             class="card-title d-flex justify-content-between"
