@@ -80,6 +80,7 @@
     let mgsConsole;
     let mgsConsoleFit;
     let mgsProperties = {};
+    let mgsDatapackMode = false;
     let websocket;
     let server_url;
     let hasConnected;
@@ -429,7 +430,7 @@
         }
     }
 
-    function installMod(id, ver_id, url) {
+    function installMod(id, ver_id, url, datapackMode) {
         if (modsToList(serverlist[mgsServer].mods).includes(id)) {
             show_notification(
                 "Ignored Mod Installation",
@@ -438,11 +439,22 @@
         }
         websocket.send(
             JSON.stringify({
-                data: "installmod",
+                data: datapackMode ? "installdatapack" : "installmod",
                 server_name: mgsServer,
                 mod_id: id,
                 mod_ver_id: ver_id,
                 mod_jar: url,
+            }),
+        );
+    }
+
+    function uninstallMod(id, datapackMode) {
+        websocket.send(
+            JSON.stringify({
+                data: "uninstallmod",
+                server_name: mgsServer,
+                mod_id: id,
+                datapackMode,
             }),
         );
     }
@@ -818,6 +830,7 @@
         {startServer}
         {stopServer}
         {setProperty}
+        {uninstallMod}
     />
     <Mods {serverlist} {mgsServer} {installMod} />
     <Toasts />

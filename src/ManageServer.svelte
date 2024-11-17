@@ -11,6 +11,8 @@
         Download,
         Heart,
         InfoCircle,
+        Puzzle,
+        TrashFill,
     } from "svelte-bootstrap-icons";
     import StartStopButton from "./StartStopButton.svelte";
     import { format, modsToList } from "./utils.js";
@@ -22,7 +24,9 @@
     export let startServer;
     export let stopServer;
     export let setProperty;
+    export let uninstallMod;
     let modsList;
+    let datapacksList;
 
     function createModsList(list) {
         if (!list) {
@@ -31,6 +35,11 @@
         modsList = ProjectsService.getProjects(
             JSON.stringify(modsToList(list.mods)),
         );
+        datapacksList = ProjectsService.getProjects(
+            JSON.stringify(modsToList(list.datapacks)),
+        );
+
+        console.log(list);
     }
 
     $: createModsList(serverlist[mgsServer]);
@@ -87,6 +96,10 @@
                         <a class="nav-link text-body" href="#mgsGuest">
                             <PersonFillAdd />
                             Guest Access
+                        </a>
+                        <a class="nav-link text-body" href="#mgsDatapacks">
+                            <Puzzle />
+                            Datapacks
                         </a>
                         {#if serverlist[mgsServer] && serverlist[mgsServer].software !== "Vanilla"}
                             <a class="nav-link text-body" href="#mgsMods">
@@ -241,6 +254,123 @@
                     <div id="mgsGuest">
                         <h4><PersonFillAdd class="me-1" />Guest Access</h4>
                     </div>
+                    <div id="mgsDatapacks">
+                        <h4><Puzzle class="me-1" />Datapacks</h4>
+                        <div
+                            class="alert alert-info d-flex align-items-center"
+                            role="alert"
+                        >
+                            <InfoCircle />
+                            <div class="ms-1">
+                                (Un)installing datapacks requires a reload to
+                                apply changes.
+                            </div>
+                        </div>
+                        {#if serverlist[mgsServer] && serverlist[mgsServer].datapacks.length}
+                            {#await datapacksList}
+                                <div class="card my-1">
+                                    <div class="d-flex">
+                                        <div
+                                            class="bg-secondary"
+                                            style="width: 128px; height: 128px;"
+                                        />
+                                        <div class="card-body">
+                                            <h5
+                                                class="card-title placeholder-glow"
+                                            >
+                                                <span
+                                                    class="placeholder col-6"
+                                                />
+                                            </h5>
+                                            <p
+                                                class="card-text placeholder-glow"
+                                            >
+                                                <span
+                                                    class="placeholder col-7"
+                                                />
+                                                <span
+                                                    class="placeholder col-4"
+                                                />
+                                                <span
+                                                    class="placeholder col-5"
+                                                />
+                                                <span
+                                                    class="placeholder col-6"
+                                                />
+                                                <span
+                                                    class="placeholder col-8"
+                                                />
+                                                <span
+                                                    class="placeholder col-3"
+                                                />
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {:then data}
+                                {#each data as datapack}
+                                    <div class="card my-1">
+                                        <div class="d-flex">
+                                            {#if datapack.icon_url}
+                                                <img
+                                                    src={datapack.icon_url}
+                                                    alt="logo"
+                                                    height="128"
+                                                />
+                                            {:else}
+                                                <div
+                                                    class="bg-secondary d-flex align-items-center justify-content-center text-light"
+                                                    style="width: 128px; height: 128px;"
+                                                >
+                                                    No logo
+                                                </div>
+                                            {/if}
+                                            <div class="card-body">
+                                                <h5
+                                                    class="card-title d-flex justify-content-between"
+                                                >
+                                                    <a
+                                                        class="link-info"
+                                                        target="_blank"
+                                                        href="https://modrinth.com/datapack/{datapack.slug}"
+                                                    >
+                                                        {datapack.title}
+                                                    </a>
+                                                    <div>
+                                                        <Download
+                                                            class="me-1"
+                                                        />{format(
+                                                            datapack.downloads,
+                                                        )}
+                                                        <Heart
+                                                            class="ms-2 me-1"
+                                                        />{format(
+                                                            datapack.followers,
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-danger"
+                                                            on:click={() =>
+                                                                uninstallMod(
+                                                                    datapack.id,
+                                                                    true,
+                                                                )}
+                                                        >
+                                                            <TrashFill
+                                                            /></button
+                                                        >
+                                                    </div>
+                                                </h5>
+                                                <p class="card-text">
+                                                    {datapack.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {/each}
+                            {/await}
+                        {:else}<p>It's empty. No datapacks inside here.</p>{/if}
+                    </div>
                     {#if serverlist[mgsServer] && serverlist[mgsServer].software !== "Vanilla"}
                         {@const type =
                             serverlist[mgsServer].software == "Paper"
@@ -341,6 +471,18 @@
                                                             />{format(
                                                                 mod.followers,
                                                             )}
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-danger"
+                                                                on:click={() =>
+                                                                    uninstallMod(
+                                                                        mod.id,
+                                                                        false,
+                                                                    )}
+                                                            >
+                                                                <TrashFill
+                                                                /></button
+                                                            >
                                                         </div>
                                                     </h5>
                                                     <p class="card-text">
@@ -356,16 +498,16 @@
                                     It's empty. No {type.toLowerCase()} inside here.
                                 </p>
                             {/if}
-                            <button
-                                type="button"
-                                class="btn btn-success"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modManager"
-                            >
-                                Install {type}...
-                            </button>
                         </div>
                     {/if}
+                    <button
+                        type="button"
+                        class="btn btn-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modManager"
+                    >
+                        Install Mods, Plugins and Datapacks...
+                    </button>
                 </div>
             </div>
             <div class="modal-footer">

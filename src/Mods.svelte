@@ -1,6 +1,11 @@
 <script>
     import { VersionsService } from "modrinthjs";
-    import { search, get_latest_ver } from "./modrinth_wrapper.js";
+    import {
+        searchMods,
+        searchDatapacks,
+        getLatestVerMod,
+        getLatestVerDatapack,
+    } from "./modrinth_wrapper.js";
     import { format } from "./utils.js";
     import { Download, Heart, Plus } from "svelte-bootstrap-icons";
 
@@ -8,6 +13,7 @@
     export let mgsServer;
     export let installMod;
     let result;
+    let datapackMode = false;
 
     function searchEntered(d) {
         if (d.key == "Enter") {
@@ -16,25 +22,43 @@
     }
 
     function advSearch(query) {
-        result = search(
-            serverlist[mgsServer].software,
-            serverlist[mgsServer].mc_version,
-            query,
-        );
+        if (datapackMode) {
+            result = searchDatapacks(serverlist[mgsServer].mc_version, query);
+        } else {
+            result = searchMods(
+                serverlist[mgsServer].software,
+                serverlist[mgsServer].mc_version,
+                query,
+            );
+        }
     }
 
     function install(id) {
         const install_optional =
             document.getElementById("installOptional").checked;
+        let promise;
 
-        get_latest_ver(
-            serverlist[mgsServer].software,
-            serverlist[mgsServer].mc_version,
-            id,
-        ).then((data) => {
+        if (datapackMode) {
+            promise = getLatestVerDatapack(
+                serverlist[mgsServer].mc_version,
+                id,
+            );
+        } else {
+            promise = getLatestVerMod(
+                serverlist[mgsServer].software,
+                serverlist[mgsServer].mc_version,
+                id,
+            );
+        }
+        promise.then((data) => {
             const latest_ver = data[0];
 
-            installMod(id, latest_ver.id, latest_ver.files[0].url);
+            installMod(
+                id,
+                latest_ver.id,
+                latest_ver.files[0].url,
+                datapackMode,
+            );
 
             if (latest_ver.dependencies.length) {
                 for (const depend of latest_ver.dependencies) {
@@ -50,8 +74,13 @@
                         depend_ver = VersionsService.getVersion(
                             depend.version_id,
                         );
+                    } else if (datapackMode) {
+                        depend_ver = getLatestVerDatapack(
+                            serverlist[mgsServer].mc_version,
+                            depend.project_id,
+                        );
                     } else {
-                        depend_ver = get_latest_ver(
+                        depend_ver = getLatestVerMod(
                             serverlist[mgsServer].software,
                             serverlist[mgsServer].mc_version,
                             depend.project_id,
@@ -61,7 +90,12 @@
                         if (d.constructor === Array) {
                             d = d[0];
                         }
-                        installMod(d.project_id, d.id, d.files[0].url);
+                        installMod(
+                            d.project_id,
+                            d.id,
+                            d.files[0].url,
+                            datapackMode,
+                        );
                     });
                 }
             }
@@ -85,7 +119,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="manageServerLabel">
-                    Install Mods and Plugins
+                    Install Mods, Plugins and Datapacks
                 </h1>
                 <button
                     type="button"
@@ -112,6 +146,23 @@
                     />
                     <label class="form-check-label" for="installOptional">
                         Also install optional dependencies
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        value=""
+                        id="datapackMode"
+                        on:change={(d) => {
+                            datapackMode = d.target.checked;
+                            advSearch(
+                                document.getElementById("modsSearch").value,
+                            );
+                        }}
+                    />
+                    <label class="form-check-label" for="datapackMode">
+                        Search for Datapacks instead
                     </label>
                 </div>
                 {#await result}
