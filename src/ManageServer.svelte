@@ -9,14 +9,14 @@
         PersonFillAdd,
         Plugin,
         Download,
-        Heart,
         InfoCircle,
         Puzzle,
-        TrashFill,
     } from "svelte-bootstrap-icons";
+    import { Tooltip, ScrollSpy } from "bootstrap";
     import StartStopButton from "./StartStopButton.svelte";
-    import { format, modsToList } from "./utils.js";
+    import { modsToList } from "./utils.js";
     import { ProjectsService } from "modrinthjs";
+    import ModList from "./ModList.svelte";
     export let mgsServer;
     export let mgsProperties;
     export let statelist;
@@ -25,6 +25,8 @@
     export let stopServer;
     export let setProperty;
     export let uninstallMod;
+    export let websocket;
+    export let mgsInitTerminal;
     let modsList;
     let datapacksList;
 
@@ -38,8 +40,39 @@
         datapacksList = ProjectsService.getProjects(
             JSON.stringify(modsToList(list.datapacks)),
         );
+    }
 
-        console.log(list);
+    function onShow() {
+        createModsList(serverlist[mgsServer]);
+        mgsInitTerminal();
+    }
+
+    function onHide() {
+        websocket.send(
+            JSON.stringify({
+                data: "stopconsolelogging",
+                server_name: mgsServer,
+            }),
+        );
+    }
+
+    function onShown() {
+        new ScrollSpy(document.getElementById("mgsBody"), {
+            target: "#manageServerSidebar",
+        });
+
+        const tooltipTriggerList = document.querySelectorAll(
+            '[data-bs-toggle="tooltip"]',
+        );
+        const tooltipList = [...tooltipTriggerList].map(
+            (tooltipTriggerEl) => new Tooltip(tooltipTriggerEl),
+        );
+        websocket.send(
+            JSON.stringify({
+                data: "startconsolelogging+getproperties",
+                server_name: mgsServer,
+            }),
+        );
     }
 
     $: createModsList(serverlist[mgsServer]);
@@ -52,7 +85,9 @@
     aria-labelledby="manageServerLabel"
     aria-hidden="true"
     data-bs-backdrop="static"
-    on:show.bs.modal={() => createModsList(serverlist[mgsServer])}
+    on:show.bs.modal={onShow}
+    on:hide.bs.modal={onHide}
+    on:shown.bs.modal={onShown}
 >
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
@@ -118,11 +153,23 @@
                     style="max-height: 78vh;"
                 >
                     <div id="mgsConsole">
-                        <h4><Terminal class="me-1" />Console</h4>
+                        <h4 class="d-flex align-items-center">
+                            <Terminal
+                                class="me-1"
+                                height="24"
+                                width="24"
+                            />Console
+                        </h4>
                         <div id="mgs-terminal" />
                     </div>
                     <div id="mgsSettings">
-                        <h4><GearFill class="me-1" />Settings</h4>
+                        <h4 class="d-flex align-items-center">
+                            <GearFill
+                                class="me-1"
+                                height="24"
+                                width="24"
+                            />Settings
+                        </h4>
                         <div
                             class="alert alert-info d-flex align-items-center"
                             role="alert"
@@ -149,19 +196,22 @@
                                             <td>
                                                 {property[2][0]}
                                                 <a
-                                                    class="fw-light fst-italic link-info"
+                                                    class="link-info text-decoration-none"
                                                     href="https://minecraft.wiki/w/Server.properties#{property[0]}"
                                                     target="_blank"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="{property[2][3]}<p>Click for wiki entry</p>"
+                                                    data-bs-html="true"
                                                 >
-                                                    (Wiki entry)
+                                                    <InfoCircle />
                                                 </a>
                                                 <br />
                                                 <span
                                                     class="text-body-secondary"
-                                                    >Default value: <i
-                                                        >{property[2][2]}</i
-                                                    ></span
                                                 >
+                                                    Default value:
+                                                    <i>{property[2][2]}</i>
+                                                </span>
                                             </td>
                                             <td>
                                                 {#if type == "boolean"}
@@ -199,10 +249,10 @@
                                                         type="number"
                                                         min={type == "integer"
                                                             ? "0"
-                                                            : property[2][3]}
+                                                            : property[2][4]}
                                                         max={type == "integer"
                                                             ? "10000"
-                                                            : property[2][4]}
+                                                            : property[2][5]}
                                                         on:focusout={(d) =>
                                                             setProperty(
                                                                 i,
@@ -214,7 +264,7 @@
                                                     <select
                                                         class="form-control"
                                                     >
-                                                        {#each Object.entries(property[2][3]) as option}
+                                                        {#each Object.entries(property[2][4]) as option}
                                                             <option
                                                                 value={option[0]}
                                                                 selected={property[1] ==
@@ -243,19 +293,45 @@
                         {/if}
                     </div>
                     <div id="mgsPlayers">
-                        <h4><PeopleFill class="me-1" />Players</h4>
+                        <h4 class="d-flex align-items-center">
+                            <PeopleFill
+                                class="me-1"
+                                height="24"
+                                width="24"
+                            />Players
+                        </h4>
                     </div>
                     <div id="mgsFiles">
-                        <h4><Folder class="me-1" />Files</h4>
+                        <h4 class="d-flex align-items-center">
+                            <Folder class="me-1" height="24" width="24" />Files
+                        </h4>
                     </div>
                     <div id="mgsWorld">
-                        <h4><GlobeAmericas class="me-1" />World</h4>
+                        <h4 class="d-flex align-items-center">
+                            <GlobeAmericas
+                                class="me-1"
+                                height="24"
+                                width="24"
+                            />World
+                        </h4>
                     </div>
                     <div id="mgsGuest">
-                        <h4><PersonFillAdd class="me-1" />Guest Access</h4>
+                        <h4 class="d-flex align-items-center">
+                            <PersonFillAdd
+                                class="me-1"
+                                height="24"
+                                width="24"
+                            />Guest Access
+                        </h4>
                     </div>
                     <div id="mgsDatapacks">
-                        <h4><Puzzle class="me-1" />Datapacks</h4>
+                        <h4 class="d-flex align-items-center">
+                            <Puzzle
+                                class="me-1"
+                                height="24"
+                                width="24"
+                            />Datapacks
+                        </h4>
                         <div
                             class="alert alert-info d-flex align-items-center"
                             role="alert"
@@ -267,108 +343,11 @@
                             </div>
                         </div>
                         {#if serverlist[mgsServer] && serverlist[mgsServer].datapacks.length}
-                            {#await datapacksList}
-                                <div class="card my-1">
-                                    <div class="d-flex">
-                                        <div
-                                            class="bg-secondary"
-                                            style="width: 128px; height: 128px;"
-                                        />
-                                        <div class="card-body">
-                                            <h5
-                                                class="card-title placeholder-glow"
-                                            >
-                                                <span
-                                                    class="placeholder col-6"
-                                                />
-                                            </h5>
-                                            <p
-                                                class="card-text placeholder-glow"
-                                            >
-                                                <span
-                                                    class="placeholder col-7"
-                                                />
-                                                <span
-                                                    class="placeholder col-4"
-                                                />
-                                                <span
-                                                    class="placeholder col-5"
-                                                />
-                                                <span
-                                                    class="placeholder col-6"
-                                                />
-                                                <span
-                                                    class="placeholder col-8"
-                                                />
-                                                <span
-                                                    class="placeholder col-3"
-                                                />
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            {:then data}
-                                {#each data as datapack}
-                                    <div class="card my-1">
-                                        <div class="d-flex">
-                                            {#if datapack.icon_url}
-                                                <img
-                                                    src={datapack.icon_url}
-                                                    alt="logo"
-                                                    height="128"
-                                                />
-                                            {:else}
-                                                <div
-                                                    class="bg-secondary d-flex align-items-center justify-content-center text-light"
-                                                    style="width: 128px; height: 128px;"
-                                                >
-                                                    No logo
-                                                </div>
-                                            {/if}
-                                            <div class="card-body">
-                                                <h5
-                                                    class="card-title d-flex justify-content-between"
-                                                >
-                                                    <a
-                                                        class="link-info"
-                                                        target="_blank"
-                                                        href="https://modrinth.com/datapack/{datapack.slug}"
-                                                    >
-                                                        {datapack.title}
-                                                    </a>
-                                                    <div>
-                                                        <Download
-                                                            class="me-1"
-                                                        />{format(
-                                                            datapack.downloads,
-                                                        )}
-                                                        <Heart
-                                                            class="ms-2 me-1"
-                                                        />{format(
-                                                            datapack.followers,
-                                                        )}
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-danger"
-                                                            on:click={() =>
-                                                                uninstallMod(
-                                                                    datapack.id,
-                                                                    true,
-                                                                )}
-                                                        >
-                                                            <TrashFill
-                                                            /></button
-                                                        >
-                                                    </div>
-                                                </h5>
-                                                <p class="card-text">
-                                                    {datapack.description}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {/each}
-                            {/await}
+                            <ModList
+                                listPromise={datapacksList}
+                                {uninstallMod}
+                                datapackMode={true}
+                            />
                         {:else}<p>It's empty. No datapacks inside here.</p>{/if}
                     </div>
                     {#if serverlist[mgsServer] && serverlist[mgsServer].software !== "Vanilla"}
@@ -377,8 +356,12 @@
                                 ? "Plugins"
                                 : "Mods"}
                         <div id="mgsMods">
-                            <h4>
-                                <Plugin class="me-1" />{type}
+                            <h4 class="d-flex align-items-center">
+                                <Plugin
+                                    class="me-1"
+                                    height="24"
+                                    width="24"
+                                />{type}
                             </h4>
                             <div
                                 class="alert alert-warning d-flex align-items-center"
@@ -391,108 +374,11 @@
                                 </div>
                             </div>
                             {#if serverlist[mgsServer].mods.length}
-                                {#await modsList}
-                                    <div class="card my-1">
-                                        <div class="d-flex">
-                                            <div
-                                                class="bg-secondary"
-                                                style="width: 128px; height: 128px;"
-                                            />
-                                            <div class="card-body">
-                                                <h5
-                                                    class="card-title placeholder-glow"
-                                                >
-                                                    <span
-                                                        class="placeholder col-6"
-                                                    />
-                                                </h5>
-                                                <p
-                                                    class="card-text placeholder-glow"
-                                                >
-                                                    <span
-                                                        class="placeholder col-7"
-                                                    />
-                                                    <span
-                                                        class="placeholder col-4"
-                                                    />
-                                                    <span
-                                                        class="placeholder col-5"
-                                                    />
-                                                    <span
-                                                        class="placeholder col-6"
-                                                    />
-                                                    <span
-                                                        class="placeholder col-8"
-                                                    />
-                                                    <span
-                                                        class="placeholder col-3"
-                                                    />
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {:then data}
-                                    {#each data as mod}
-                                        <div class="card my-1">
-                                            <div class="d-flex">
-                                                {#if mod.icon_url}
-                                                    <img
-                                                        src={mod.icon_url}
-                                                        alt="logo"
-                                                        height="128"
-                                                    />
-                                                {:else}
-                                                    <div
-                                                        class="bg-secondary d-flex align-items-center justify-content-center text-light"
-                                                        style="width: 128px; height: 128px;"
-                                                    >
-                                                        No logo
-                                                    </div>
-                                                {/if}
-                                                <div class="card-body">
-                                                    <h5
-                                                        class="card-title d-flex justify-content-between"
-                                                    >
-                                                        <a
-                                                            class="link-info"
-                                                            target="_blank"
-                                                            href="https://modrinth.com/mod/{mod.slug}"
-                                                        >
-                                                            {mod.title}
-                                                        </a>
-                                                        <div>
-                                                            <Download
-                                                                class="me-1"
-                                                            />{format(
-                                                                mod.downloads,
-                                                            )}
-                                                            <Heart
-                                                                class="ms-2 me-1"
-                                                            />{format(
-                                                                mod.followers,
-                                                            )}
-                                                            <button
-                                                                type="button"
-                                                                class="btn btn-danger"
-                                                                on:click={() =>
-                                                                    uninstallMod(
-                                                                        mod.id,
-                                                                        false,
-                                                                    )}
-                                                            >
-                                                                <TrashFill
-                                                                /></button
-                                                            >
-                                                        </div>
-                                                    </h5>
-                                                    <p class="card-text">
-                                                        {mod.description}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {/each}
-                                {/await}
+                                <ModList
+                                    listPromise={modsList}
+                                    {uninstallMod}
+                                    datapackMode={false}
+                                />
                             {:else}
                                 <p>
                                     It's empty. No {type.toLowerCase()} inside here.
@@ -502,10 +388,11 @@
                     {/if}
                     <button
                         type="button"
-                        class="btn btn-success"
+                        class="btn btn-primary"
                         data-bs-toggle="modal"
                         data-bs-target="#modManager"
                     >
+                        <Download />
                         Install Mods, Plugins and Datapacks...
                     </button>
                 </div>
@@ -519,7 +406,7 @@
                 />
                 <button
                     type="button"
-                    class="btn btn-primary"
+                    class="btn btn-secondary"
                     data-bs-dismiss="modal">Close</button
                 >
             </div>

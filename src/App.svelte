@@ -1,7 +1,7 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
     import "@xterm/xterm/css/xterm.css";
-    import { Toast, Modal, ScrollSpy } from "bootstrap";
+    import { Toast, Modal, ScrollSpy, Tooltip } from "bootstrap";
     import { sha256 } from "barely-sha256";
     import {
         MoonStarsFill,
@@ -10,6 +10,7 @@
         TrashFill,
         PencilFill,
         BoxArrowRight,
+        Plus,
     } from "svelte-bootstrap-icons";
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
@@ -80,7 +81,6 @@
     let mgsConsole;
     let mgsConsoleFit;
     let mgsProperties = {};
-    let mgsDatapackMode = false;
     let websocket;
     let server_url;
     let hasConnected;
@@ -208,42 +208,6 @@
         switch (state) {
             case "server":
                 websocket.send('{"data":"listservers"}');
-                document
-                    .getElementById("createServer")
-                    .addEventListener("hidden.bs.modal", () => {
-                        document.getElementById("createName").value = "";
-                        document.getElementById("createMc").value = "";
-                        document.getElementById("createSoftware").value = "";
-                        document.getElementById("createBuild").value = "";
-                        document
-                            .getElementById("createSoftwareForm")
-                            .classList.remove("was-validated");
-                    });
-                const mgs = document.getElementById("manageServer");
-                mgs.addEventListener("hide.bs.modal", () => {
-                    websocket.send(
-                        JSON.stringify({
-                            data: "stopconsolelogging",
-                            server_name: mgsServer,
-                        }),
-                    );
-                });
-
-                mgs.addEventListener("show.bs.modal", () => {
-                    mgsInitTerminal();
-                    websocket.send(
-                        JSON.stringify({
-                            data: "startconsolelogging+getproperties",
-                            server_name: mgsServer,
-                        }),
-                    );
-                });
-
-                mgs.addEventListener("shown.bs.modal", () => {
-                    new ScrollSpy(document.getElementById("mgsBody"), {
-                        target: "#manageServerSidebar",
-                    });
-                });
         }
     }
 
@@ -472,7 +436,12 @@
                     height="24"
                     class="d-inline-block align-text-top"
                 />
-                Andromeda Saddle
+                Andromeda Saddle -
+                {#if page_state == "closed"}
+                    Disconnected
+                {:else}
+                    Connected with: {server_url}
+                {/if}
             </span>
             <button
                 class="navbar-toggler"
@@ -695,9 +664,10 @@
         {/if}
         <div class="d-flex justify-content-center">
             <button
-                class="btn btn-primary mx-1"
+                class="btn btn-primary mx-1 d-flex align-items-center"
                 data-bs-toggle="modal"
-                on:click={() => openCreateModal()}>Create server</button
+                on:click={() => openCreateModal()}
+                ><Plus width="24" height="24" />Create Server</button
             >
         </div>
     {/if}
@@ -708,6 +678,15 @@
         tabindex="-1"
         aria-labelledby="createModalLabel"
         aria-hidden="true"
+        on:hidden.bs.modal={() => {
+            document.getElementById("createName").value = "";
+            document.getElementById("createMc").value = "";
+            document.getElementById("createSoftware").value = "";
+            document.getElementById("createBuild").value = "";
+            document
+                .getElementById("createSoftwareForm")
+                .classList.remove("was-validated");
+        }}
     >
         <div class="modal-dialog">
             <div class="modal-content">
@@ -814,7 +793,7 @@
                             data-bs-dismiss="modal">Cancel</button
                         >
                         <button type="submit" class="btn btn-success">
-                            Create server
+                            Create Server
                         </button>
                     </div>
                 </form>
@@ -831,6 +810,8 @@
         {stopServer}
         {setProperty}
         {uninstallMod}
+        {websocket}
+        {mgsInitTerminal}
     />
     <Mods {serverlist} {mgsServer} {installMod} />
     <Toasts />
