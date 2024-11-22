@@ -45,6 +45,12 @@
     function onShow() {
         createModsList(serverlist[mgsServer]);
         mgsInitTerminal();
+        websocket.send(
+            JSON.stringify({
+                data: "startconsolelogging+getproperties",
+                server_name: mgsServer,
+            }),
+        );
     }
 
     function onHide() {
@@ -66,12 +72,6 @@
         );
         const tooltipList = [...tooltipTriggerList].map(
             (tooltipTriggerEl) => new Tooltip(tooltipTriggerEl),
-        );
-        websocket.send(
-            JSON.stringify({
-                data: "startconsolelogging+getproperties",
-                server_name: mgsServer,
-            }),
         );
     }
 
@@ -108,36 +108,60 @@
                     class="navbar bg-body-tertiary px-3 mb-3 rounded-2"
                 >
                     <nav class="nav nav-pills">
-                        <a class="nav-link text-body" href="#mgsConsole">
+                        <a
+                            class="nav-link text-body icon-link"
+                            href="#mgsConsole"
+                        >
                             <Terminal />
                             Console
                         </a>
-                        <a class="nav-link text-body" href="#mgsSettings">
+                        <a
+                            class="nav-link text-body icon-link"
+                            href="#mgsSettings"
+                        >
                             <GearFill />
                             Settings
                         </a>
-                        <a class="nav-link text-body" href="#mgsPlayers">
+                        <a
+                            class="nav-link text-body icon-link"
+                            href="#mgsPlayers"
+                        >
                             <PeopleFill />
                             Players
                         </a>
-                        <a class="nav-link text-body" href="#mgsFiles">
+                        <a
+                            class="nav-link text-body icon-link"
+                            href="#mgsFiles"
+                        >
                             <Folder />
                             Files
                         </a>
-                        <a class="nav-link text-body" href="#mgsWorld">
+                        <a
+                            class="nav-link text-body icon-link"
+                            href="#mgsWorld"
+                        >
                             <GlobeAmericas />
                             World
                         </a>
-                        <a class="nav-link text-body" href="#mgsGuest">
+                        <a
+                            class="nav-link text-body icon-link"
+                            href="#mgsGuest"
+                        >
                             <PersonFillAdd />
                             Guest Access
                         </a>
-                        <a class="nav-link text-body" href="#mgsDatapacks">
+                        <a
+                            class="nav-link text-body icon-link"
+                            href="#mgsDatapacks"
+                        >
                             <Puzzle />
                             Datapacks
                         </a>
                         {#if serverlist[mgsServer] && serverlist[mgsServer].software !== "Vanilla"}
-                            <a class="nav-link text-body" href="#mgsMods">
+                            <a
+                                class="nav-link text-body icon-link"
+                                href="#mgsMods"
+                            >
                                 <Plugin />
                                 {serverlist[mgsServer].software == "Paper"
                                     ? "Plugins"
@@ -153,27 +177,18 @@
                     style="max-height: 78vh;"
                 >
                     <div id="mgsConsole">
-                        <h4 class="d-flex align-items-center">
-                            <Terminal
-                                class="me-1"
-                                height="24"
-                                width="24"
-                            />Console
+                        <h4 class="icon-link">
+                            <Terminal />Console
                         </h4>
+                        <br />
                         <div id="mgs-terminal" />
                     </div>
                     <div id="mgsSettings">
-                        <h4 class="d-flex align-items-center">
-                            <GearFill
-                                class="me-1"
-                                height="24"
-                                width="24"
-                            />Settings
+                        <h4 class="icon-link">
+                            <GearFill />Settings
                         </h4>
-                        <div
-                            class="alert alert-info d-flex align-items-center"
-                            role="alert"
-                        >
+                        <br />
+                        <div class="alert alert-info icon-link" role="alert">
                             <InfoCircle />
                             <div class="ms-1">
                                 Changing a setting requires a server restart!
@@ -293,49 +308,35 @@
                         {/if}
                     </div>
                     <div id="mgsPlayers">
-                        <h4 class="d-flex align-items-center">
-                            <PeopleFill
-                                class="me-1"
-                                height="24"
-                                width="24"
-                            />Players
+                        <h4 class="icon-link">
+                            <PeopleFill />Players
                         </h4>
+                        <br />
                     </div>
                     <div id="mgsFiles">
-                        <h4 class="d-flex align-items-center">
-                            <Folder class="me-1" height="24" width="24" />Files
+                        <h4 class="icon-link">
+                            <Folder />Files
                         </h4>
+                        <br />
                     </div>
                     <div id="mgsWorld">
-                        <h4 class="d-flex align-items-center">
-                            <GlobeAmericas
-                                class="me-1"
-                                height="24"
-                                width="24"
-                            />World
+                        <h4 class="icon-link">
+                            <GlobeAmericas />World
                         </h4>
+                        <br />
                     </div>
                     <div id="mgsGuest">
-                        <h4 class="d-flex align-items-center">
-                            <PersonFillAdd
-                                class="me-1"
-                                height="24"
-                                width="24"
-                            />Guest Access
+                        <h4 class="icon-link">
+                            <PersonFillAdd />Guest Access
                         </h4>
+                        <br />
                     </div>
                     <div id="mgsDatapacks">
-                        <h4 class="d-flex align-items-center">
-                            <Puzzle
-                                class="me-1"
-                                height="24"
-                                width="24"
-                            />Datapacks
+                        <h4 class="icon-link">
+                            <Puzzle />Datapacks
                         </h4>
-                        <div
-                            class="alert alert-info d-flex align-items-center"
-                            role="alert"
-                        >
+                        <br />
+                        <div class="alert alert-info icon-link" role="alert">
                             <InfoCircle />
                             <div class="ms-1">
                                 (Un)installing datapacks requires a reload to
@@ -356,15 +357,12 @@
                                 ? "Plugins"
                                 : "Mods"}
                         <div id="mgsMods">
-                            <h4 class="d-flex align-items-center">
-                                <Plugin
-                                    class="me-1"
-                                    height="24"
-                                    width="24"
-                                />{type}
+                            <h4 class="icon-link">
+                                <Plugin />{type}
                             </h4>
+                            <br />
                             <div
-                                class="alert alert-warning d-flex align-items-center"
+                                class="alert alert-warning icon-link"
                                 role="alert"
                             >
                                 <ExclamationTriangleFill />

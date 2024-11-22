@@ -1,7 +1,7 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
     import "@xterm/xterm/css/xterm.css";
-    import { Toast, Modal, ScrollSpy, Tooltip } from "bootstrap";
+    import { Toast, Modal } from "bootstrap";
     import { sha256 } from "barely-sha256";
     import {
         MoonStarsFill,
