@@ -85,11 +85,23 @@
     let server_url;
     let hasConnected;
 
+    let cpu_usage;
+    let mem_usage;
+
     const url_params = new URLSearchParams(window.location.search);
     if (url_params.has("remote")) {
         server_url = url_params.get("remote");
     } else {
         server_url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}`;
+    }
+
+    function setupTooltips() {
+        const tooltipTriggerList = document.querySelectorAll(
+            '[data-bs-toggle="tooltip"]',
+        );
+        const tooltipList = [...tooltipTriggerList].map(
+            (tooltipTriggerEl) => new Tooltip(tooltipTriggerEl),
+        );
     }
 
     function startWebsocket() {
@@ -188,10 +200,16 @@
 
                 case "properties":
                     mgsProperties[jdata.server_name] = jdata.properties;
+                    setTimeout(setupTooltips, 1000);
                     break;
 
                 case "settings":
                     serverlist[jdata.server_name] = jdata.settings;
+                    break;
+
+                case "sysstats":
+                    cpu_usage = jdata.cpu;
+                    mem_usage = jdata.mem;
                     break;
 
                 default:
@@ -457,6 +475,38 @@
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <div class="navbar-nav me-auto mb-2 mb-lg-0" />
+                {#if page_state != "closed"}
+                    <div
+                        class="progress bg-secondary"
+                        role="progressbar"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={cpu_usage}
+                        style="width: 15rem; height: auto;"
+                    >
+                        <div
+                            class="progress-bar bg-warning overflow-visible"
+                            style="width: {cpu_usage}%;"
+                        >
+                            CPU
+                        </div>
+                    </div>
+                    <div
+                        class="progress bg-secondary ms-1"
+                        role="progressbar"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={mem_usage}
+                        style="width: 15rem; height: auto;"
+                    >
+                        <div
+                            class="progress-bar bg-info overflow-visible"
+                            style="width: {mem_usage}%;"
+                        >
+                            Memory
+                        </div>
+                    </div>
+                {/if}
                 <button
                     class="btn btn-outline-secondary mx-1"
                     type="button"

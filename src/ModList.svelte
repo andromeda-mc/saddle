@@ -10,10 +10,11 @@
 
     function fix_data(data) {
         if (data.hits) {
-            return data.hits;
-        } else {
-            return data;
+            data = data.hits;
         }
+        return data.sort((a, b) => {
+            return a.title.localeCompare(b.title);
+        });
     }
 </script>
 
@@ -57,7 +58,9 @@
                             <a
                                 class="link-info"
                                 target="_blank"
-                                href="https://modrinth.com/hit/{hit.slug}"
+                                href="https://modrinth.com/{datapackMode
+                                    ? 'datapack'
+                                    : 'mod'}/{hit.slug}"
                             >
                                 {hit.title}
                             </a>

@@ -45,12 +45,6 @@
     function onShow() {
         createModsList(serverlist[mgsServer]);
         mgsInitTerminal();
-        websocket.send(
-            JSON.stringify({
-                data: "startconsolelogging+getproperties",
-                server_name: mgsServer,
-            }),
-        );
     }
 
     function onHide() {
@@ -63,16 +57,16 @@
     }
 
     function onShown() {
+        websocket.send(
+            JSON.stringify({
+                data: "startconsolelogging+getproperties",
+                server_name: mgsServer,
+            }),
+        );
+
         new ScrollSpy(document.getElementById("mgsBody"), {
             target: "#manageServerSidebar",
         });
-
-        const tooltipTriggerList = document.querySelectorAll(
-            '[data-bs-toggle="tooltip"]',
-        );
-        const tooltipList = [...tooltipTriggerList].map(
-            (tooltipTriggerEl) => new Tooltip(tooltipTriggerEl),
-        );
     }
 
     $: createModsList(serverlist[mgsServer]);
@@ -278,20 +272,17 @@
                                                 {:else if type == "string_dropdown"}
                                                     <select
                                                         class="form-control"
+                                                        on:change={(d) =>
+                                                            setProperty(
+                                                                i,
+                                                                d.target.value,
+                                                            )}
                                                     >
                                                         {#each Object.entries(property[2][4]) as option}
                                                             <option
                                                                 value={option[0]}
                                                                 selected={property[1] ==
                                                                     option[0]}
-                                                                on:change={(
-                                                                    d,
-                                                                ) =>
-                                                                    setProperty(
-                                                                        i,
-                                                                        d.target
-                                                                            .value,
-                                                                    )}
                                                             >
                                                                 {option[1]}
                                                             </option>
@@ -336,6 +327,16 @@
                             <Puzzle />Datapacks
                         </h4>
                         <br />
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modManager"
+                        >
+                            <Download />
+                            Install Mods, Plugins and Datapacks...
+                        </button>
+
                         <div class="alert alert-info icon-link" role="alert">
                             <InfoCircle />
                             <div class="ms-1">
@@ -384,15 +385,6 @@
                             {/if}
                         </div>
                     {/if}
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modManager"
-                    >
-                        <Download />
-                        Install Mods, Plugins and Datapacks...
-                    </button>
                 </div>
             </div>
             <div class="modal-footer">
