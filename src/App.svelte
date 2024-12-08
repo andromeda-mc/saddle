@@ -1,7 +1,7 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
     import "@xterm/xterm/css/xterm.css";
-    import { Toast, Modal } from "bootstrap";
+    import { Toast, Modal, Tooltip } from "bootstrap";
     import { sha256 } from "barely-sha256";
     import {
         MoonStarsFill,
@@ -15,7 +15,7 @@
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
     import { onMount } from "svelte";
-    import { modsToList } from "./utils.js";
+    import { modsListToVerList } from "./utils.js";
     import StartStopButton from "./StartStopButton.svelte";
     import Queue from "./Queue.svelte";
     import Toasts from "./Toasts.svelte";
@@ -200,7 +200,7 @@
 
                 case "properties":
                     mgsProperties[jdata.server_name] = jdata.properties;
-                    setTimeout(setupTooltips, 1000);
+                    setTimeout(setupTooltips, 100);
                     break;
 
                 case "settings":
@@ -413,7 +413,12 @@
     }
 
     function installMod(id, ver_id, url, datapackMode) {
-        if (modsToList(serverlist[mgsServer].mods).includes(id)) {
+        const list = modsListToVerList(
+            datapackMode
+                ? serverlist[mgsServer].datapacks
+                : serverlist[mgsServer].mods,
+        );
+        if (list[id] && list[id] == ver_id) {
             show_notification(
                 "Ignored Mod Installation",
                 "A mod (or a dependency of a mod) was not installed because it is already installed.",
@@ -482,10 +487,11 @@
                         aria-valuemin="0"
                         aria-valuemax="100"
                         aria-valuenow={cpu_usage}
-                        style="width: 15rem; height: auto;"
+                        style="width: 15rem; height: auto; cursor: default;"
+                        title="{cpu_usage}%"
                     >
                         <div
-                            class="progress-bar bg-warning overflow-visible"
+                            class="progress-bar bg-warning overflow-visible text-dark"
                             style="width: {cpu_usage}%;"
                         >
                             CPU
@@ -497,10 +503,11 @@
                         aria-valuemin="0"
                         aria-valuemax="100"
                         aria-valuenow={mem_usage}
-                        style="width: 15rem; height: auto;"
+                        style="width: 15rem; height: auto; cursor: default;"
+                        title="{mem_usage}%"
                     >
                         <div
-                            class="progress-bar bg-info overflow-visible"
+                            class="progress-bar bg-info overflow-visible text-dark"
                             style="width: {mem_usage}%;"
                         >
                             Memory
@@ -862,6 +869,7 @@
         {uninstallMod}
         {websocket}
         {mgsInitTerminal}
+        {installMod}
     />
     <Mods {serverlist} {mgsServer} {installMod} />
     <Toasts />

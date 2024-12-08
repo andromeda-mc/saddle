@@ -12,9 +12,9 @@
         InfoCircle,
         Puzzle,
     } from "svelte-bootstrap-icons";
-    import { Tooltip, ScrollSpy } from "bootstrap";
+    import { ScrollSpy } from "bootstrap";
     import StartStopButton from "./StartStopButton.svelte";
-    import { modsToList } from "./utils.js";
+    import { modsToList, modsListToVerList } from "./utils.js";
     import { ProjectsService } from "modrinthjs";
     import ModList from "./ModList.svelte";
     export let mgsServer;
@@ -27,6 +27,7 @@
     export let uninstallMod;
     export let websocket;
     export let mgsInitTerminal;
+    export let installMod;
     let modsList;
     let datapacksList;
 
@@ -83,7 +84,7 @@
     on:hide.bs.modal={onHide}
     on:shown.bs.modal={onShown}
 >
-    <div class="modal-dialog modal-fullscreen">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="manageServerLabel">
@@ -327,6 +328,14 @@
                             <Puzzle />Datapacks
                         </h4>
                         <br />
+                        <div class="alert alert-info icon-link" role="alert">
+                            <InfoCircle />
+                            <div class="ms-1">
+                                (Un)installing datapacks requires a reload to
+                                apply changes.
+                            </div>
+                        </div>
+                        <br />
                         <button
                             type="button"
                             class="btn btn-primary"
@@ -337,18 +346,18 @@
                             Install Mods, Plugins and Datapacks...
                         </button>
 
-                        <div class="alert alert-info icon-link" role="alert">
-                            <InfoCircle />
-                            <div class="ms-1">
-                                (Un)installing datapacks requires a reload to
-                                apply changes.
-                            </div>
-                        </div>
                         {#if serverlist[mgsServer] && serverlist[mgsServer].datapacks.length}
                             <ModList
                                 listPromise={datapacksList}
                                 {uninstallMod}
+                                {installMod}
                                 datapackMode={true}
+                                sort={true}
+                                versions={modsListToVerList(
+                                    serverlist[mgsServer].datapacks,
+                                )}
+                                {serverlist}
+                                {mgsServer}
                             />
                         {:else}<p>It's empty. No datapacks inside here.</p>{/if}
                     </div>
@@ -376,7 +385,14 @@
                                 <ModList
                                     listPromise={modsList}
                                     {uninstallMod}
+                                    {installMod}
                                     datapackMode={false}
+                                    sort={true}
+                                    versions={modsListToVerList(
+                                        serverlist[mgsServer].mods,
+                                    )}
+                                    {serverlist}
+                                    {mgsServer}
                                 />
                             {:else}
                                 <p>
