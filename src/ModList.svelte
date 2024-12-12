@@ -240,4 +240,27 @@
             </div>
         {/each}
     {/if}
+{:catch error}
+    <div class="card my-1">
+        <div class="d-flex">
+            <div
+                class="bg-danger d-flex align-items-center justify-content-center text-light fs-3"
+                style="width: 128px; height: 128px;"
+            >
+                !
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">
+                    Failed to fetch metadata from modrinth!
+                </h5>
+                <h6 class="card-subtitle text-body-secondary">
+                    This is not necessarily an Andromeda Stall or Saddle error.
+                </h6>
+                <p class="card-text">
+                    Error details: {error.message}
+                    For even further details please see the developer console.
+                </p>
+            </div>
+        </div>
+    </div>
 {/await}
