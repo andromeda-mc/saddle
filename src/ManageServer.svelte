@@ -23,13 +23,41 @@
     export let serverlist;
     export let startServer;
     export let stopServer;
-    export let setProperty;
     export let uninstallMod;
     export let websocket;
     export let mgsInitTerminal;
     export let installMod;
     let modsList;
     let datapacksList;
+
+    function setProperty(index, value) {
+        if (mgsProperties[mgsServer][index][1] === value) {
+            return;
+        }
+        mgsProperties[mgsServer][index][1] = value;
+
+        websocket.send(
+            JSON.stringify({
+                data: "setproperty",
+                server_name: mgsServer,
+                property: mgsProperties[mgsServer][index][0],
+                value: value,
+            }),
+        );
+    }
+
+    function setSetting(setting, value) {
+        serverlist[mgsServer][setting] = value;
+
+        websocket.send(
+            JSON.stringify({
+                data: "setsetting",
+                server_name: mgsServer,
+                setting,
+                value,
+            }),
+        );
+    }
 
     function createModsList(list) {
         if (!list) {
@@ -203,7 +231,7 @@
                                     {#each mgsProperties[mgsServer] as property, i}
                                         {@const type = property[2][1]}
                                         <tr class="align-middle">
-                                            <td>
+                                            <td class="w-50">
                                                 {property[2][0]}
                                                 <a
                                                     class="link-info text-decoration-none"
@@ -222,6 +250,26 @@
                                                     Default value:
                                                     <i>{property[2][2]}</i>
                                                 </span>
+                                                {#if property[0] == "online-mode"}
+                                                    <br /><br />
+                                                    <span class="text-warning">
+                                                        Disabling this option
+                                                        allows anyone, including
+                                                        unauthorized or cracked
+                                                        players, to join your
+                                                        server, including
+                                                        griefers or hackers.
+                                                        <br />
+                                                        <strong>
+                                                            Only turn this off
+                                                            if you fully
+                                                            understand the risks
+                                                            and have implemented
+                                                            additional security
+                                                            measures!
+                                                        </strong>
+                                                    </span>
+                                                {/if}
                                             </td>
                                             <td>
                                                 {#if type == "boolean"}
@@ -295,6 +343,75 @@
                                             </td>
                                         </tr>
                                     {/each}
+                                </tbody>
+                            </table>
+                        {/if}
+                        <h5>Andromeda-specific settings</h5>
+                        {#if serverlist[mgsServer] && Object.keys(serverlist).length}
+                            <table
+                                class="table table-bordered table-striped table-responsive"
+                            >
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Option</th>
+                                        <th scope="col">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            Autostart server
+                                            <InfoCircle
+                                                class="text-info"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-title="Whether the server starts when Andromeda Stall starts"
+                                            />
+                                        </td>
+                                        <td>
+                                            <div class="form-switch">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    role="switch"
+                                                    checked={serverlist[
+                                                        mgsServer
+                                                    ].autostart === true}
+                                                    on:change={(d) =>
+                                                        setSetting(
+                                                            "autostart",
+                                                            d.target.checked,
+                                                        )}
+                                                />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            Autorestart server
+                                            <InfoCircle
+                                                class="text-info"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-title="Whether the server restarts when the server stopped"
+                                            />
+                                        </td>
+                                        <td>
+                                            <div class="form-switch">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    role="switch"
+                                                    checked={serverlist[
+                                                        mgsServer
+                                                    ].autorestart === true}
+                                                    on:change={(d) =>
+                                                        setSetting(
+                                                            "autorestart",
+                                                            d.target.checked,
+                                                        )}
+                                                />
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         {/if}

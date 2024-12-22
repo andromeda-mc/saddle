@@ -81,6 +81,7 @@
     let mgsConsole;
     let mgsConsoleFit;
     let mgsProperties = {};
+    let mgsModal;
     let websocket;
     let server_url;
     let hasConnected;
@@ -226,6 +227,11 @@
         switch (state) {
             case "server":
                 websocket.send('{"data":"listservers"}');
+
+            case "closed":
+                if (mgsModal) {
+                    mgsModal.hide();
+                }
         }
     }
 
@@ -352,8 +358,8 @@
 
     function openManageServer(server_name) {
         mgsServer = server_name;
-        const modal = new Modal("#manageServer");
-        modal.show();
+        mgsModal = new Modal("#manageServer");
+        mgsModal.show();
     }
 
     function mgsInitTerminal() {
@@ -379,22 +385,6 @@
                 );
             }
         });
-    }
-
-    function setProperty(index, value) {
-        if (mgsProperties[mgsServer][index][1] === value) {
-            return;
-        }
-        mgsProperties[mgsServer][index][1] = value;
-
-        websocket.send(
-            JSON.stringify({
-                data: "setproperty",
-                server_name: mgsServer,
-                property: mgsProperties[mgsServer][index][0],
-                value: value,
-            }),
-        );
     }
 
     function login() {
@@ -659,9 +649,7 @@
     {:else if page_state === "server"}
         {#if serverlist && Object.keys(serverlist).length > 0}
             <div class="container">
-                <div
-                    class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"
-                >
+                <div class="row row-cols-auto g-4 justify-content-center">
                     {#each Object.keys(serverlist) as server (server)}
                         {@const server_settings = serverlist[server]}
                         {@const server_state = statelist[server]}
@@ -865,7 +853,6 @@
         {serverlist}
         {startServer}
         {stopServer}
-        {setProperty}
         {uninstallMod}
         {websocket}
         {mgsInitTerminal}
