@@ -15,5 +15,5 @@ export async function searchDatapacks(version, query) {
 
 export async function getVers(software, version, id) {
     // software = datapack for datapack mode
-    return await VersionsService.getProjectVersions(id, `["${software.toLowerCase()}"]`, `["${version}"]`, true);
+    return await VersionsService.getProjectVersions(id, `["${software.toLowerCase()}"]`, `["${version}"]`);
 }

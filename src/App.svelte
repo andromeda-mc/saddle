@@ -51,13 +51,15 @@
 
     $: updateTheme(darkMode);
 
-    function show_exception(title, subtitle) {
+    function show_exception(title, subtitle, list = true) {
         console.error(`Andromeda exception:\n${title} - ${subtitle}`);
         const toastElement = document.getElementById("warningtoast");
         toastElement.querySelector("strong").innerText = title;
         toastElement.querySelector(".toast-body").innerText = subtitle;
         Toast.getOrCreateInstance(toastElement).show();
-        exception_list = [{ title, subtitle }, ...exception_list];
+        if (list) {
+            exception_list = [{ title, subtitle }, ...exception_list];
+        }
     }
 
     function show_notification(title, subtitle) {
@@ -100,7 +102,7 @@
         const tooltipTriggerList = document.querySelectorAll(
             '[data-bs-toggle="tooltip"]',
         );
-        const tooltipList = [...tooltipTriggerList].map(
+        [...tooltipTriggerList].map(
             (tooltipTriggerEl) => new Tooltip(tooltipTriggerEl),
         );
     }
@@ -114,6 +116,7 @@
                 show_exception(
                     "Failed to connect to the server!",
                     "Connection failed",
+                    false,
                 );
             }
             hasConnected = false;
@@ -163,7 +166,7 @@
                             const login = document.getElementById("loginPass");
                             login.value = "";
                             login.setCustomValidity(
-                                "Your password is incorrect!\nIf you forgot your password, reset it using the CLI tool on this server.",
+                                "Your password is incorrect!\nIf you forgot your password, reset it by generating a new password hash.",
                             );
                             break;
 
@@ -593,8 +596,8 @@
                         <label for="loginPass">Password</label>
                         <div class="invalid-feedback">
                             Your password is incorrect!<br />
-                            If you forgot your password, reset it using the CLI tool
-                            on this server.
+                            If you forgot your password, reset it by generating a
+                            new password hash.
                         </div>
                     </div>
                 </div>

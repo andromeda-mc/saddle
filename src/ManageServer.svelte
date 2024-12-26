@@ -197,7 +197,7 @@
                     id="mgsBody"
                     class="overflow-auto p-3"
                     data-bs-smooth-scroll="true"
-                    style="max-height: 78vh;"
+                    style="max-height: 70vh;"
                 >
                     <div id="mgsConsole">
                         <h4 class="icon-link">
