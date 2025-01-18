@@ -1,11 +1,6 @@
 <script>
     import { PlayFill, StopFill } from "svelte-bootstrap-icons";
-    function capitalize(string) {
-        if (!string) {
-            return;
-        }
-        return string.charAt(0).toUpperCase() + string.slice(1);
-    }
+    import { capitalize } from "./utils.js";
 
     export let server_state, server, startServer, stopServer;
 </script>

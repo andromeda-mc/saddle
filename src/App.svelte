@@ -15,16 +15,13 @@
     import { Terminal } from "@xterm/xterm";
     import { FitAddon } from "@xterm/addon-fit";
     import { onMount } from "svelte";
-    import { modsListToVerList } from "./utils.js";
+    import { modsListToVerList, capitalize } from "./utils.js";
     import StartStopButton from "./StartStopButton.svelte";
     import Queue from "./Queue.svelte";
     import Toasts from "./Toasts.svelte";
     import ManageServer from "./ManageServer.svelte";
     import Mods from "./Mods.svelte";
-
-    function capitalize(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
-    }
+    import InstallModDialog from "./InstallModDialog.svelte";
 
     function statetoclass(state) {
         switch (state) {
@@ -87,6 +84,8 @@
     let websocket;
     let server_url;
     let hasConnected;
+    let mod_install_pid;
+    let mod_install_vid;
 
     let cpu_usage;
     let mem_usage;
@@ -439,6 +438,11 @@
         );
     }
 
+    function set_mod_install_vars(pid, vid) {
+        mod_install_pid = pid;
+        mod_install_vid = vid;
+    }
+
     startWebsocket();
 </script>
 
@@ -526,9 +530,9 @@
                     type="button"
                     on:click={() => websocket.close()}
                     disabled={page_state === "closed"}
-                    title="Log out"
+                    title="Disconnect"
                 >
-                    <BoxArrowRight /> Log out
+                    <BoxArrowRight /> Disconnect
                 </button>
                 <button
                     class="btn btn{page_state === 'server'
@@ -584,7 +588,7 @@
                         Currently connected with: {server_url}
                     </h5>
                     <h6 class="card-subtitle">
-                        To change this, log out and click remote login.
+                        To change this, disconnect and click remote login.
                     </h6>
                     <div class="form-floating mb-3">
                         <input
@@ -857,13 +861,20 @@
         {startServer}
         {stopServer}
         {uninstallMod}
+        {installMod}
         {websocket}
         {mgsInitTerminal}
-        {installMod}
+        {set_mod_install_vars}
     />
-    <Mods {serverlist} {mgsServer} {installMod} />
+    <Mods {serverlist} {mgsServer} {set_mod_install_vars} />
     <Toasts />
     <Queue {exception_list} {delException} {queue} />
+    <InstallModDialog
+        {mod_install_pid}
+        {mod_install_vid}
+        {installMod}
+        serverlist_entry={serverlist[mgsServer]}
+    />
 </main>
 
 <style>

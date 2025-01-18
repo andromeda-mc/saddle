@@ -3,12 +3,12 @@
     import { format } from "./utils.js";
     import { getVers } from "./modrinth_wrapper.js";
 
+    export let set_mod_install_vars;
     export let listPromise;
-    export let installMod;
     export let installMode = false;
     export let datapackMode = false;
     export let sort = false;
-    export let optionalMode = false;
+    export let installMod = undefined;
     export let uninstallMod = undefined;
     export let serverlist = undefined;
     export let mgsServer = undefined;
@@ -27,44 +27,8 @@
         }
     }
 
-    function install(id, ver_id, install_optional) {
-        installMod(id, ver_id.id, ver_id.files[0].url, datapackMode);
-
-        if (ver_id.dependencies.length) {
-            for (const depend of ver_id.dependencies) {
-                if (depend.dependency_type == "optional" && !install_optional) {
-                    continue;
-                }
-
-                let depend_ver;
-                if (depend.version_id) {
-                    depend_ver = VersionsService.getVersion(depend.version_id);
-                } else if (datapackMode) {
-                    depend_ver = getVers(
-                        "datapack",
-                        serverlist[mgsServer].mc_version,
-                        depend.project_id,
-                    );
-                } else {
-                    depend_ver = getVers(
-                        serverlist[mgsServer].software,
-                        serverlist[mgsServer].mc_version,
-                        depend.project_id,
-                    );
-                }
-                depend_ver.then((d) => {
-                    if (d.constructor === Array) {
-                        d = d[0];
-                    }
-                    installMod(
-                        d.project_id,
-                        d.id,
-                        d.files[0].url,
-                        datapackMode,
-                    );
-                });
-            }
-        }
+    function prepareInstall(id, ver_id) {
+        set_mod_install_vars(id, ver_id.id);
     }
 
     function getVersion(data, id) {
@@ -77,7 +41,7 @@
 
     function updateMod(id, latest_ver) {
         uninstallMod(id, datapackMode);
-        install(id, latest_ver, false);
+        installMod(id, latest_ver, false);
     }
 </script>
 
@@ -165,7 +129,7 @@
                                             type="button"
                                             class="btn btn-primary mb-1 ms-2"
                                             on:click={() =>
-                                                install(
+                                                prepareInstall(
                                                     hit.project_id,
                                                     getVersion(
                                                         data,
@@ -174,8 +138,10 @@
                                                                 hit.project_id,
                                                         ).value,
                                                     ),
-                                                    optionalMode,
                                                 )}
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#installModModal"
+                                            aria-controls="installModModal"
                                         >
                                             <Plus />
                                             Install

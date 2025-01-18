@@ -3,10 +3,9 @@
     import ModList from "./ModList.svelte";
     export let serverlist;
     export let mgsServer;
-    export let installMod;
+    export let set_mod_install_vars;
     let result;
     let datapackMode = false;
-    let optionalMode = false;
 
     function searchEntered(d) {
         if (d.key == "Enter") {
@@ -66,20 +65,6 @@
                         class="form-check-input"
                         type="checkbox"
                         value=""
-                        id="installOptional"
-                        on:change={(d) => {
-                            optionalMode = d.target.checked;
-                        }}
-                    />
-                    <label class="form-check-label" for="installOptional">
-                        Also install optional dependencies
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
                         id="datapackMode"
                         on:change={(d) => {
                             datapackMode = d.target.checked;
@@ -95,11 +80,10 @@
                 <ModList
                     listPromise={result}
                     installMode={true}
-                    {installMod}
                     {datapackMode}
-                    {optionalMode}
                     {serverlist}
                     {mgsServer}
+                    {set_mod_install_vars}
                 />
             </div>
         </div>

@@ -24,9 +24,10 @@
     export let startServer;
     export let stopServer;
     export let uninstallMod;
+    export let installMod;
     export let websocket;
     export let mgsInitTerminal;
-    export let installMod;
+    export let set_mod_install_vars;
     let modsList;
     let datapacksList;
 
@@ -467,7 +468,6 @@
                             <ModList
                                 listPromise={datapacksList}
                                 {uninstallMod}
-                                {installMod}
                                 datapackMode={true}
                                 sort={true}
                                 versions={modsListToVerList(
@@ -475,6 +475,8 @@
                                 )}
                                 {serverlist}
                                 {mgsServer}
+                                {set_mod_install_vars}
+                                {installMod}
                             />
                         {:else}<p>It's empty. No datapacks inside here.</p>{/if}
                     </div>
@@ -502,7 +504,6 @@
                                 <ModList
                                     listPromise={modsList}
                                     {uninstallMod}
-                                    {installMod}
                                     datapackMode={false}
                                     sort={true}
                                     versions={modsListToVerList(
@@ -510,6 +511,8 @@
                                     )}
                                     {serverlist}
                                     {mgsServer}
+                                    {set_mod_install_vars}
+                                    {installMod}
                                 />
                             {:else}
                                 <p>
