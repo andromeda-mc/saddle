@@ -1,0 +1,97 @@
+:root {
+	--background-color: #2a2933;
+	--foreground-color: white;
+
+    --fg-1: #495b71;
+
+    --bg-0: #3f4e61;
+    --bg-1: #344050;
+	--bg-2: #1a191f;
+
+	font-family:
+		Arial,
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		Roboto,
+		Oxygen,
+		Ubuntu,
+		Cantarell,
+		'Open Sans',
+		'Helvetica Neue',
+		sans-serif;
+}
+
+body {
+	background-color: var(--background-color);
+	color: var(--foreground-color);
+
+	margin: 0
+}
+
+nav {
+	img {
+		max-width: 32px;
+		margin-right: 1rem;
+	}
+
+	font-size: 20pt;
+    line-height: 0;
+	display: flex;
+	align-items: center;
+
+	background-color: var(--bg-2);
+	padding: 0.5rem;
+}
+
+footer {
+	position: fixed;
+	bottom: 0;
+	font-size: 10pt;
+	text-align: center;
+	background-color: var(--bg-2);
+	width: 100vw;
+	padding-top: 0.5rem;
+}
+
+
+.gray-text {
+    color: #A0A0A0;
+}
+
+
+.div-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.div-box {
+    background-color: var(--bg-1);
+    padding: 1rem;
+
+    border: solid var(--fg-1);
+    border-radius: 1rem;
+}
+
+input[type=text], input[type=password], input[type=submit], input[type=url] {
+    width: -moz-available;
+    color: var(--foreground-color);
+    background-color: var(--bg-0);
+    border: solid var(--fg-1);
+    border-radius: 0.5rem;
+    margin: 0.75rem 0;
+    padding: 0.5rem 0.25rem;
+    font-size: 12pt;
+    outline: none;
+
+    transition: background-color 500ms;
+}
+
+input[type=submit]:hover, input[type=text]:focus, input[type=password]:focus, input[type=url]:focus {
+    background-color: var(--fg-1);
+
+    transition: background-color 500ms;
+}
+
