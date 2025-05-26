@@ -1,36 +1,50 @@
 <script module>
 	export type ActionVersion = CancelablePromise<Version[]>;
-	export type ActionSnippet = (versions: ActionVersion, p_id: string) => ReturnType<Snippet>;
+	export type ActionSnippet = (versions: ActionVersion, p_id: string, installed: Record<string, string>) => ReturnType<Snippet>;
 </script>
 
 <script lang="ts">
 	import { page } from "$app/state";
+	import { con } from "$lib/client.svelte";
 	import { getVers } from "$lib/modrinthWrapper";
 	import { assembleModrinthUrl, capitalize, format, reduceToOwner } from "$lib/util";
 	import { Badge, Card, CardBody, CardSubtitle, CardText, CardTitle, Icon } from "@sveltestrap/sveltestrap";
 	import { TeamsService } from "modrinthjs";
-	import type { CancelablePromise, Project, ProjectResult, SearchResults, Version } from "modrinthjs";
+	import type { CancelablePromise, Project, ProjectResult, ProjectsService, SearchResults, Version } from "modrinthjs";
 	import type { Snippet } from "svelte";
 	const {
 		listPromise,
 		isDatapack,
 		actionSnippet,
+		sort = true,
 	}: {
 		listPromise: Promise<Project[] | SearchResults>;
 		isDatapack: boolean;
 		actionSnippet?: ActionSnippet;
+		sort?: boolean;
 	} = $props();
+	
+	const { server } = page.params;
+	const installed = $derived(Object.fromEntries(con.state.servers[server][isDatapack ? "datapacks" : "mods"]))
 
-	function fixData(data: Project[] | SearchResults): SearchResults["hits"] | Project[] {
-		if (!Array.isArray(data)) {
-			return data.hits;
+	function fixSort(data: ProjectResult[] | Project[]): typeof data {
+		if (sort) {
+			return data.sort((a, b) => a.title!.localeCompare(b.title!));
+		} else {
+			return data;
 		}
-		return data;
+	}
+
+	function fixData(data: Project[] | SearchResults): ProjectResult[] | Project[] {
+		if (!Array.isArray(data)) {
+			return fixSort(data.hits);
+		}
+		return fixSort(data);
 	}
 </script>
 
 {#await listPromise}
-	<Card>
+	<Card class="my-2">
 		<div class="flex items-center">
 			<CardBody class="flex-none! pr-0!">
 				<div class="bg-secondary w-24 h-24 border-2 rounded-sm border-(--bs-card-border-color)"></div>
@@ -94,18 +108,18 @@
 						<div>
 							<CardTitle>
 								<a href={modrinthUrl} target="_blank">{project.title}</a>
-								{#if project.categories?.length}
-									{#each project.categories as cat}
-										<Badge color="primary" class="mx-1 no-underline!" href="https://modrinth.com/mods?f=categories:{cat}" target="_blank"
-											>{capitalize(cat)}</Badge
-										>
-									{/each}
-								{/if}
+								{#each project.categories ?? [] as cat}
+									<Badge color="primary" class="mx-1 no-underline!" href="https://modrinth.com/mods?f=categories:{cat}" target="_blank"
+										>{capitalize(cat)}</Badge
+									>
+								{/each}
 							</CardTitle>
 							<CardSubtitle>
 								{#if "author" in project}
 									by
-									{project.author}
+									<a href="https://modrinth.com/user/{project.author}" target="_blank">
+										{project.author}
+									</a>
 								{:else}
 									{#await TeamsService.getProjectTeamMembers(project.id)}
 										<div class="placeholder-glow">
@@ -140,16 +154,14 @@
 								<Icon name="heart" />
 								{format("followers" in project ? project.followers : project.follows)}
 							</div>
-							{#if actionSnippet}
-								{@render actionSnippet(getVers(page.params.server!, p_id, isDatapack), p_id)}
-							{/if}
+							{@render actionSnippet?.(getVers(page.params.server!, p_id, isDatapack), p_id, installed)}
 						</div>
 					</CardBody>
 				</div>
 			</Card>
 		{/each}
 	{:else}
-		<Card>
+		<Card class="my-2">
 			<div class="flex items-center">
 				<CardBody class="flex-none! pr-0!">
 					<div
@@ -165,7 +177,7 @@
 		</Card>
 	{/if}
 {:catch error}
-	<Card>
+	<Card class="my-2">
 		<div class="flex items-center">
 			<CardBody class="flex-none! pr-0!">
 				<div
@@ -185,3 +197,4 @@
 		</div>
 	</Card>
 {/await}
+<span>Data provided by <a href="https://modrinth.com" target="_blank">Modrinth</a> (<a href="https://docs.modrinth.com/api/" target="_blank">API</a>)</span>

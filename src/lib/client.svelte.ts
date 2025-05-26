@@ -115,6 +115,22 @@ export const con = $state(
 				messageTemplate: { data: "deleteserver", name: "%s" },
 				returnType: QueueUpdate,
 			},
+			uninstallMod: {
+				messageTemplate: { data: "uninstallmod", server_name: "%s", mod_id: "%s", datapackMode: false },
+				returnType: QueueUpdate,
+			},
+			uninstallDatapack: {
+				messageTemplate: { data: "uninstallmod", server_name: "%s", mod_id: "%s", datapackMode: true },
+				returnType: QueueUpdate,
+			},
+			installMod: {
+				messageTemplate: { data: "installmod", server_name: "%s", mod_id: "%s", mod_ver_id: "%s", mod_jar: "%s" },
+				returnType: QueueUpdate,
+			},
+			installDatapack: {
+				messageTemplate: { data: "installdatapack", server_name: "%s", mod_id: "%s", mod_ver_id: "%s", mod_jar: "%s" },
+				returnType: QueueUpdate,
+			},
 		},
 		startState: {
 			authed: false,
@@ -145,5 +161,9 @@ con.addMessageListener((m) => {
 			const data = m as t.TypeOf<typeof ServerList>;
 			con.state.servers = data.servers;
 			con.state.states = data.states;
+
+		case "settings":
+			const data2 = m as { data: "settings"; server_name: string; settings: t.TypeOf<typeof Server> };
+			con.state.servers[data2.server_name] = data2.settings;
 	}
 });
