@@ -40,10 +40,10 @@
 {/snippet}
 
 <Container>
-	<h1 class="text-lg text-center">Installed Mods</h1>
+	<h1 class="text-lg text-center">Installed Datapacks</h1>
 	<ModList
-		listPromise={ProjectsService.getProjects(JSON.stringify(con.state.servers[server].mods.map((s) => s[0])))}
-		isDatapack={false}
+		listPromise={ProjectsService.getProjects(JSON.stringify(con.state.servers[server].datapacks.map((s) => s[0])))}
+		isDatapack={true}
 		actionSnippet={updateUninstall}
 	/>
 </Container>

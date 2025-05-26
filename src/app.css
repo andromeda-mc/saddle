@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
-.card-text, .card-title {
-  margin: 0;
+.card-text,
+.card-title {
+	margin: 0 !important;
 }

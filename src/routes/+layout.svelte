@@ -56,8 +56,15 @@
   check();
 </script>
 
-<Navbar color="secondary-subtle" expand="md" container="md">
-  <NavbarBrand>Andromeda Saddle²</NavbarBrand>
+<Navbar color="secondary-subtle" expand="lg" container="md">
+  <NavbarBrand
+    >Andromeda Saddle²
+    <span class="text-lg"
+      >{page.route.id?.includes("[ip]") && con.isConnected
+        ? " - " + con.websocket!.url
+        : ""}
+    </span></NavbarBrand
+  >
   <NavbarToggler on:click={() => (isOpen = !isOpen)} />
   <Collapse {isOpen} navbar expand="md" on:update={handleUpdate}>
     <Nav class="ms-auto items-center" navbar>
