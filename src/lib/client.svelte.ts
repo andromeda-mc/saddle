@@ -24,12 +24,16 @@ const Server = t.type({
 	datapacks: t.array(Mod),
 });
 
-const ServerList = t.type({
-	data: t.literal("serverlist"),
-	servers: t.record(t.string, Server),
-	states: t.record(t.string, State),
-	queue: QueueDump,
-});
+const ServerList = t.intersection([
+	t.type({
+		data: t.literal("serverlist"),
+		servers: t.record(t.string, Server),
+		states: t.record(t.string, State),
+	}),
+	t.partial({
+		queue: QueueDump,
+	}),
+]);
 
 // Properties
 
@@ -48,10 +52,10 @@ const stringDropdownProperty = t.tuple([
 	t.record(t.string, t.string), // values formatted as: {[value]: [readable value]}
 ]);
 
-// @ts-ignore
+// @ts-expect-error io-ts is weird
 const integerRangeProperty: t.TupleC<
 	[t.StringC, t.LiteralC<"integer_range">, t.StringC, t.StringC, t.NumberC, t.NumberC]
-	// @ts-ignore
+	// @ts-expect-error io-ts is still weird
 > = t.tuple([
 	t.string, // readable name
 	t.literal("integer_range"), // type
@@ -65,6 +69,9 @@ const PropertyMeta = t.union([genericProperty, stringDropdownProperty, integerRa
 
 //                                     name      value     meta
 export const legacyProperty = t.tuple([t.string, t.string, PropertyMeta]);
+
+const SoftwareInfo = t.type({ data: t.literal("softwareinfo"), software: t.string, mc_versions: t.array(t.string) });
+const BuildInfo = t.type({ data: t.literal("buildinfo"), software: t.string, mc_version: t.string, builds: t.array(t.string) });
 
 export const con = $state(
 	new WebsocketStateClient({
@@ -131,6 +138,18 @@ export const con = $state(
 				messageTemplate: { data: "installdatapack", server_name: "%s", mod_id: "%s", mod_ver_id: "%s", mod_jar: "%s" },
 				returnType: QueueUpdate,
 			},
+			getSoftwareData: {
+				messageTemplate: { data: "getsoftwaredata", software: "%s" },
+				returnType: SoftwareInfo,
+			},
+			getBuildData: {
+				messageTemplate: { data: "getbuilddata", software: "%s", mc_version: "%s" },
+				returnType: BuildInfo,
+			},
+			createServer: {
+				messageTemplate: { data: "installserver", name: "%s", software: "%s", mcversion: "%s", softwareversion: "%s" },
+				returnType: ServerList,
+			},
 		},
 		startState: {
 			authed: false,
@@ -139,31 +158,58 @@ export const con = $state(
 			cpu_percent: 0,
 			memory_percent: 0,
 			terminals: {} as Record<string, Terminal>,
+			queue: [] as t.TypeOf<typeof QueueDump>,
+			softwareInfo: {} as Record<string, Record<string, string[] | null>>,
 		},
 	})
 );
 
 con.addMessageListener((m) => {
 	switch (m.data) {
-		case "serverstate":
+		case "serverstate": {
 			con.state.states[m.server] = m.state;
 			if (m.state === "starting") con.state.terminals[m.server].reset();
+			break;
+		}
 
-		case "sysstats":
+		case "sysstats": {
 			con.state.cpu_percent = m.cpu;
 			con.state.memory_percent = m.mem;
+			break;
+		}
 
 		case "console_logging":
 			if (!con.state.terminals[m.console]) return;
 			con.state.terminals[m.console].write(m.msg);
+			break;
 
-		case "serverlist":
+		case "serverlist": {
 			const data = m as t.TypeOf<typeof ServerList>;
 			con.state.servers = data.servers;
 			con.state.states = data.states;
+			break;
+		}
 
-		case "settings":
-			const data2 = m as { data: "settings"; server_name: string; settings: t.TypeOf<typeof Server> };
-			con.state.servers[data2.server_name] = data2.settings;
+		case "settings": {
+			const data = m as { data: "settings"; server_name: string; settings: t.TypeOf<typeof Server> };
+			con.state.servers[data.server_name] = data.settings;
+			break;
+		}
+
+		case "queue": {
+			const data = m as t.TypeOf<typeof QueueUpdate>;
+			con.state.queue = data.queue;
+			break;
+		}
+
+		case "softwareinfo": {
+			const data = m as t.TypeOf<typeof SoftwareInfo>;
+			con.state.softwareInfo[data.software] = Object.fromEntries(data.mc_versions.map((e) => [e, null]));
+		}
+
+		case "buildinfo": {
+			const data = m as t.TypeOf<typeof BuildInfo>;
+			con.state.softwareInfo[data.software][data.mc_version] = data.builds;
+		}
 	}
 });

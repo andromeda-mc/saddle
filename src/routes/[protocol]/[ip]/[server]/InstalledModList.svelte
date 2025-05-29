@@ -6,10 +6,11 @@
 	import { ProjectsService, type Version } from "modrinthjs";
 	import ModManager from "./ModManager.svelte";
 	import { installMod } from "$lib/mods";
+	import { assembleWSPath } from "$lib/util";
 
 	let isOpen: boolean = $state(false);
 
-	const { server } = page.params;
+	const { server, protocol, ip } = page.params;
 	const { isDatapack }: { isDatapack: boolean } = $props();
 
 	const toggle = () => {
@@ -21,6 +22,10 @@
 		installMod(server, p_id, version, isDatapack);
 	}
 </script>
+
+<svelte:head>
+	<title>{isDatapack ? "Datapacks" : "Mods"} - {server} - {assembleWSPath(protocol, ip)} - Andromeda Saddle</title>
+</svelte:head>
 
 {#snippet updateUninstall(versions: ActionVersion, p_id: string, installed: Record<string, string>)}
 	<Button

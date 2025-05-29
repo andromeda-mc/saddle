@@ -88,7 +88,7 @@
 			</Button>
 			<FormGroup floating label="Select version to install" class="mb-0!">
 				<Input type="select" id="verSelect-{p_id}">
-					{#each data as version}
+					{#each data as version (version.id)}
 						<option value={version.id}>{version.name}</option>
 					{/each}
 				</Input>
@@ -141,7 +141,7 @@
 							<td>{installVersion.version_number}</td>
 							<td></td>
 						</tr>
-						{#each installVersion.dependencies ?? [] as dep}
+						{#each installVersion.dependencies ?? [] as dep (dep.version_id)}
 							<tr>
 								<td>
 									<Input

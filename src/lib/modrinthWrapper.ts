@@ -24,7 +24,9 @@ export function search(serverName: string, query: string, isDatapack: boolean) {
 }
 
 export function getVers(serverName: string, id: string, isDatapack?: boolean) {
-	let { software, mc_version }: { software: string; mc_version: string } = con.state.servers[serverName];
+	let { software }: { software: string } = con.state.servers[serverName];
+	const { mc_version }: { mc_version: string } = con.state.servers[serverName];
+
 	if (isDatapack) software = "datapack";
 
 	return VersionsService.getProjectVersions(id, `["${software.toLowerCase()}"]`, `["${mc_version}"]`);

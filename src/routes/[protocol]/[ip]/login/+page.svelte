@@ -31,12 +31,8 @@
 
 				promise = con.runJob("listservers");
 
-				promise.then((d) => {
-					con.state.servers = d.servers;
-					con.state.states = d.states;
-
-					const url =
-						assembleBasePath(con.websocket!.url) + page.url.search.substring(2);
+				promise.then(() => {
+					const url = assembleBasePath(con.websocket!.url) + page.url.search.substring(2);
 					goto(url);
 				});
 			})
@@ -51,16 +47,17 @@
 		capsOn = e.getModifierState("CapsLock");
 	}
 
-	let promise:
-		| ReturnTypeOfJob<typeof con, "auth">
-		| ReturnTypeOfJob<typeof con, "listservers">
-		| undefined = $state();
+	let promise: ReturnTypeOfJob<typeof con, "auth"> | ReturnTypeOfJob<typeof con, "listservers"> | undefined = $state();
 	let failed = $state("");
 	let password: string = $state("");
 	let capsOn: boolean = $state(false);
 
 	const { protocol, ip } = page.params;
 </script>
+
+<svelte:head>
+	<title>Login - {assembleWSPath(protocol, ip)} - Andromeda Saddle</title>
+</svelte:head>
 
 <div class="absolute top-1/2 left-1/2 -translate-1/2">
 	{#if promise}
@@ -83,12 +80,7 @@
 							<Icon name="key" class="mr-1" />
 							Password:
 						</InputGroupText>
-						<Input
-							type="password"
-							required
-							bind:value={password}
-							onkeydown={checkforcaps}
-						/>
+						<Input type="password" required bind:value={password} onkeydown={checkforcaps} />
 					</InputGroup>
 					<span class="text-danger" style:display={capsOn ? "block" : "none"}>
 						<Icon name="capslock-fill" />

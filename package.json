@@ -13,6 +13,7 @@
 	},
 	"dependencies": {
 		"@battlefieldduck/xterm-svelte": "^2.1.0",
+		"@sveltejs/adapter-node": "^5.2.12",
 		"@sveltestrap/sveltestrap": "^7.1.0",
 		"@types/sprintf-js": "^1.1.4",
 		"bootstrap": "^5.3.6",

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import { con } from "$lib/client.svelte";
-	import { capitalize } from "$lib/util";
+	import { assembleWSPath, capitalize } from "$lib/util";
 	import { type ITerminalInitOnlyOptions, type ITerminalOptions, Xterm, XtermAddon } from "@battlefieldduck/xterm-svelte";
 	import { CardFooter, CardHeader, Card, CardBody, CardTitle, CardText, CardSubtitle, Button, Icon } from "@sveltestrap/sveltestrap";
 	import { onDestroy } from "svelte";
-	const { server } = page.params;
+	const { server, protocol, ip } = page.params;
 
 	let serverState = $derived(con.state.states[server]);
 
@@ -37,6 +37,10 @@
 		con.runJob("unsubscribeLogging");
 	});
 </script>
+
+<svelte:head>
+	<title>{server} - {assembleWSPath(protocol, ip)} - Andromeda Saddle</title>
+</svelte:head>
 
 {#if con.state.authed}
 	{@const data = con.state.servers[server]}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import { con, legacyProperty } from "$lib/client.svelte";
+	import { assembleWSPath } from "$lib/util";
 	import {
 		Card,
 		CardBody,
@@ -11,8 +12,12 @@
 	import { isRight } from "fp-ts/lib/Either";
 	import { array } from "io-ts";
 
-	const { server } = page.params;
+	const { server, protocol, ip } = page.params;
 </script>
+
+<svelte:head>
+	<title>Settings - {server} - {assembleWSPath(protocol, ip)} - Andromeda Saddle</title>
+</svelte:head>
 
 {#if con.state.authed}
 	{#await con.runJob("getProperties", server) then d}
@@ -27,7 +32,7 @@
 						<CardText
 							>The settings can't be displayed, because your version of
 							Andromeda Stall is using the old system, which is deprecated.
-							Please switch to the newest version of Andromeda Stall.</CardText
+							Please switch to the newest version of Andromeda Stall and Andromeda Saddle.</CardText
 						>
 					</CardBody>
 				</Card>
