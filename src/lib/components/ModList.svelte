@@ -10,7 +10,7 @@
 	import { assembleModrinthUrl, capitalize, format, reduceToOwner } from "$lib/util";
 	import { Badge, Card, CardBody, CardSubtitle, CardText, CardTitle, Icon } from "@sveltestrap/sveltestrap";
 	import { TeamsService } from "modrinthjs";
-	import type { CancelablePromise, Project, ProjectResult, ProjectsService, SearchResults, Version } from "modrinthjs";
+	import type { CancelablePromise, Project, ProjectResult, SearchResults, Version } from "modrinthjs";
 	import type { Snippet } from "svelte";
 	const {
 		listPromise,

@@ -12,7 +12,7 @@ export function assembleBasePath(u: WebSocket["url"] | URL): string {
 
 export const assembleWSPath = (protocol: string, ip: string): string => `${protocol}://${ip}:29836`;
 
-const stripProtocolIp = (str: string): string => str.replace(/\/wss?\/\w*/, "");
+const stripProtocolIp = (str: string): string => str.replace(/\/wss?\/[\w-\.]*/, "");
 
 export function redirectToLogin(): void {
 	console.log("Redirecting to login...");
